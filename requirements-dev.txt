@@ -1,0 +1,5 @@
+ipdb
+pylint~=1.5.4
+codecov
+pytest-cov
+flake8

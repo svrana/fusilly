@@ -14,6 +14,7 @@ from fusilly.exceptions import DuplicateTargetError, BuildConfigError
 from fusilly.virtualenv import Virtualenv
 from fusilly.utils import to_iterable, is_installed
 
+
 stream_handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 stream_handler.setFormatter(formatter)
@@ -132,7 +133,9 @@ class BuildFiles(object):
 
     def find_build_files_in(self, directory):
         builds = []
-        for root, _, files in os.walk(directory, topdown=False):
+        for root, dirs, files in os.walk(directory, topdown=True):
+            dirs[:] = [d for d in dirs if not d[0] == '.']
+            logger.debug("Checking %s for build files", root)
             if 'BUILD' in files:
                 buildFile = BuildFile(os.path.join(root, 'BUILD'))
                 logger.debug("Found build file in %s", buildFile.dir)
@@ -157,7 +160,7 @@ class BuildFiles(object):
     def find_build_files(self):
         self.project_root = self.find_project_root()
         if self.project_root is None:
-            print "Could not find project root. Check directory."
+            logger.error("Could not find project root. Check directory.")
             sys.exit(1)
         self.builds = self.find_build_files_in(self.project_root)
         return self
@@ -177,7 +180,7 @@ class BuildFiles(object):
 
         for buildFile in self.builds:
             os.chdir(buildFile.dir)
-            logger.debug("Loading BUILD in %s", buildFile.dir)
+            logger.debug("Loading BUILD from %s", buildFile.dir)
             # pylint: disable=W0122
             exec(buildFile.source(), globals(), locals())
 
@@ -238,7 +241,7 @@ def main():
     buildFiles.load()
 
     if not Targets:
-        print "No targets found"
+        logger.error("No targets found")
         sys.exit(1)
 
     COMMANDS[args.command](buildFiles, args.args)

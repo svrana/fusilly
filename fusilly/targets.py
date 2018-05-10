@@ -70,6 +70,10 @@ class Target(object):
 
         self.srcs = self._files_expanded - self._exclude_files_expanded
 
+    # def add_virtualenv(self, virtualenv_path):
+    #     virtualenv_files = glob(virtualenv_path + '/**')
+    #     self.srcs = set.union(self.srcs, set(virtualenv_files))
+
 
 class TargetCollection(collections.Mapping):
     def __init__(self):

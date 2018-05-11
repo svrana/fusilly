@@ -1,5 +1,6 @@
 import collections
 import logging
+import os
 
 from glob2 import glob
 
@@ -13,8 +14,8 @@ class Target(object):
     def __init__(self, name, files, exclude_files=None, pip_requirements=None,
                  artifact=None, **kwargs):
         self.name = name
-        self.files = to_iterable(files)
-        self.exclude_files = to_iterable(exclude_files)
+        self.files = self.flatten(to_iterable(files))
+        self.exclude_files = self.flatten(to_iterable(exclude_files))
         self.pip_requirements = to_iterable(pip_requirements)
         self.run = kwargs.get('run')
         self.artifact = artifact
@@ -61,7 +62,7 @@ class Target(object):
         if self.exclude_files:
             self._exclude_files_expanded = [
                 glob(exclude_glob)
-                for exclude_glob in self._exclude_files_expanded
+                for exclude_glob in self.exclude_files
             ]
             self._exclude_files_expanded = self.flatten(
                 self._exclude_files_expanded
@@ -69,10 +70,6 @@ class Target(object):
             self._exclude_files_expanded = set(self._exclude_files_expanded)
 
         self.srcs = self._files_expanded - self._exclude_files_expanded
-
-    # def add_virtualenv(self, virtualenv_path):
-    #     virtualenv_files = glob(virtualenv_path + '/**')
-    #     self.srcs = set.union(self.srcs, set(virtualenv_files))
 
 
 class TargetCollection(collections.Mapping):
@@ -98,13 +95,25 @@ class TargetCollection(collections.Mapping):
             yield target
 
 
-def python_artifact(name,
-                    files=None, pip_requirements=None, exclude_files=None,
+def python_artifact(name, files=None, artifact=None, pip_requirements=None,
+                    exclude_files=None,
                     **kwargs):
+    if not artifact:
+        raise BuildConfigError(
+            "build target %s must specify an 'artifact'", name
+        )
+
+    if pip_requirements:
+        cwd = os.getcwd()
+        pip_requirements = os.path.abspath(
+            os.path.join(cwd, pip_requirements)
+    )
+
     Targets.add(dict(
         func='make build',
         name=name,
         files=files,
+        artifact=artifact,
         pip_requirements=pip_requirements,
         exclude_files=exclude_files,
         **kwargs

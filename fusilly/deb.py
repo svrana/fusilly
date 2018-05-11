@@ -18,8 +18,29 @@ class Deb(object):
         self.options_str = ' '.join(options_list)
         self.dir_mappings = dir_mappings
 
+    def create_mapping(self, project_root, target_directory, files):
+        srcs = []
+
+        for filename in files:
+            destination = os.path.join(
+                target_directory,
+                filename[len(project_root)+1:]
+            )
+            srcs.append("%s=%s" % (filename, destination))
+
+        return srcs
+
+    def write_mapping(self, fd, srcs):
+        files_str = '\n'.join(srcs) # fpm expects src=dst, one per line
+
+        fd.write(files_str)
+        fd.flush()
+
+        # try to ensure that content is on disk before fpm tries to read it
+        os.fsync(fd.fileno())
+
     @classmethod
-    def create(cls, package_name, target_directory, files, options,
+    def create(cls, project_root, package_name, target_directory, files, options,
                dir_mappings):
         # bzip compresses better, but takes a little longer
         if not 'deb-compression' in options:
@@ -27,23 +48,18 @@ class Deb(object):
 
         with NamedTemporaryFile(prefix='%s-includes-' % package_name) as f:
             deb = Deb(package_name, files, options, dir_mappings)
-            # these should be files only, fpm will create the directories for us if we need
-            # them. If you want an empty dir, has to be in dir_mappinmgs
-            files = ["%s=%s" % (filename, os.path.join(target_directory, filename))
-                     for filename in files if not os.path.isdir(filename)]
-            files_str = '\n'.join(files)
-            dir_mappings = ' '.join(dir_mappings)
-            f.write(files_str)
-            f.flush()
-            # try to ensure that content is on disk before fpm tries to read it
-            os.fsync(f.fileno())
+            srcs = deb.create_mapping(project_root, target_directory, files)
+            deb.write_mapping(f, srcs)
+
             cmd = 'fpm -t deb {user_options} -n {package_name} -s dir ' \
-                  '--inputs {src_input} {dir_mappings}'.format(
+                  '--inputs {src_input}'.format(
                     user_options=deb.options_str,
                     package_name=package_name,
-                    src_input=f.name,
-                    dir_mappings=dir_mappings,
+                    src_input=f.name
                   )
+            if dir_mappings:
+                cmd += ' %s' % ' '.join(dir_mappings)
+
             cmd_array = cmd.split(' ')
             logger.debug("Running: %s", cmd)
             subprocess.call(cmd_array)

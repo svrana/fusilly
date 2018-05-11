@@ -31,6 +31,7 @@ class Target(object):
         self._exclude_files_expanded = set()
         self.srcs = None                # final set of required source files
         self.build_file_dir = None
+        self.buildFile = None
 
     @classmethod
     def from_dict(cls, target_dict):
@@ -44,9 +45,16 @@ class Target(object):
                 return 1
         return 0
 
-    def maybe_set_buildfile_dir(self, path):
-        if self.build_file_dir is None:
-            self.build_file_dir = path
+    def maybe_set_buildfile(self, buildFile):
+        if self.buildFile is None:
+            self.buildFile = buildFile
+            self.set_buildfile_dir(buildFile.dir)
+
+    def set_buildfile_dir(self, path):
+        self.build_file_dir = path
+        self.pip_requirements = [
+                os.path.join(path, req) for req in self.pip_requirements
+        ]
 
     def flatten(self, lists):
         elements = []
@@ -68,6 +76,7 @@ class Target(object):
 
         self._files_expanded = [glob(file_glob) for file_glob in self.files]
         self._files_expanded = self.flatten(self._files_expanded)
+        self._files_expanded = [os.path.abspath(f) for f in self._files_expanded]
         self._files_expanded = set(self._files_expanded)
 
         if self.exclude_files:
@@ -78,6 +87,7 @@ class Target(object):
             self._exclude_files_expanded = self.flatten(
                 self._exclude_files_expanded
             )
+            self._exclude_files_expanded = [os.path.abspath(f) for f in self._exclude_files_expanded]
             self._exclude_files_expanded = set(self._exclude_files_expanded)
 
         self.srcs = self._files_expanded - self._exclude_files_expanded
@@ -107,9 +117,9 @@ class TargetCollection(collections.Mapping):
         for target in self.target_dict:
             yield target
 
-    def set_buildfile_dir(self, path):
+    def maybe_set_buildfile(self, buildFile):
         for target in self.target_dict.itervalues():
-            target.maybe_set_buildfile_dir(path)
+            target.maybe_set_buildfile(buildFile)
 
 
 def python_artifact(name, files=None, artifact=None, pip_requirements=None,

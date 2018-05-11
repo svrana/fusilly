@@ -8,7 +8,6 @@ import sys
 import shutil
 import tempfile
 
-
 from fusilly.deb import Deb
 # pylint: disable=W0611
 from fusilly.targets import Targets, python_artifact    # noqa
@@ -90,16 +89,17 @@ class BuildFiles(object):
                           self.project_root)
             sys.exit(1)
 
-        cwd = os.getcwd()
-
         for buildFile in self.builds:
-            os.chdir(buildFile.dir)
             logger.info("Loading BUILD from %s", buildFile.dir)
+
             # pylint: disable=W0122
             exec(buildFile.source(), globals(), locals())
-            Targets.set_buildfile_dir(buildFile.dir)
 
-        os.chdir(cwd)
+            # We don't know which targets were just loaded, but we want each
+            # one to know which buildFile its associated with.
+            # TODO: should be able to pass this in the environment during exec
+            # and grab it from there.
+            Targets.maybe_set_buildfile(buildFile)
 
 
 def add_target_subparser(cmd, argParser):
@@ -109,11 +109,11 @@ def add_target_subparser(cmd, argParser):
         subparsers.add_parser(target.name, help='%s %s' % (cmd, target.name))
 
 
-def do_build(buildFiles, args):
+def do_build(buildFiles, programArgs):
     argParser = argparse.ArgumentParser(description='Build project')
     add_target_subparser('build', argParser)
-    args = argParser.parse_args(args)
-    target_name = args.subparser_name
+    subArgs = argParser.parse_args(programArgs.args)
+    target_name = subArgs.subparser_name
     target = Targets.get(target_name)
 
     if target.check():
@@ -123,8 +123,9 @@ def do_build(buildFiles, args):
     target.hydrate()
 
     try:
+        dir_mappings = []
         tempdir = tempfile.mkdtemp()
-        if target.pip_requirements and not args.skip_virtualenv:
+        if target.pip_requirements and not programArgs.skip_virtualenv:
             virtualenv_path = os.path.join(
                 tempdir, "virtualenv"
             )
@@ -136,19 +137,19 @@ def do_build(buildFiles, args):
             ve_install_path = os.path.join(
                     target.artifact.get('target_directory')
             )
-        else:
-            ve_install_path = None
+            dir_mappings.append(
+                '%s=%s' % (virtualenv_path, ve_install_path)
+            )
 
-        if target.artifact and not args.skip_artifact:
+        if target.artifact and not programArgs.skip_artifact:
             fpm_options = target.artifact.get('fpm_options', None)
             Deb.create(
+                buildFiles.project_root,
                 target.artifact['name'],
                 target.artifact['target_directory'],
                 target.srcs,
                 fpm_options,
-                dir_mappings=[
-                    '%s=%s' % (virtualenv_path, ve_install_path),
-                ]
+                dir_mappings
             )
     finally:
         shutil.rmtree(tempdir)
@@ -163,9 +164,9 @@ def main():
     argParser.add_argument('command', choices=COMMANDS)
     argParser.add_argument('--logging', choices=['info', 'warn', 'debug'],
                            help='log level', default='info')
-    argParser.add_argument('--skip-virtualenv', type=bool, default=False,
+    argParser.add_argument('--skip-virtualenv', action='store_true',
                            help="Skip virtualenv creation and bundling (dev)")
-    argParser.add_argument('--skip-artifact', type=bool, default=False,
+    argParser.add_argument('--skip-artifact', action='store_true',
                            help="skip bundling (dev)")
     argParser.add_argument('args', nargs=argparse.REMAINDER)
     args = argParser.parse_args()
@@ -179,7 +180,7 @@ def main():
         logger.error("No targets found")
         sys.exit(1)
 
-    COMMANDS[args.command](buildFiles, args.args)
+    COMMANDS[args.command](buildFiles, args)
 
 
 if __name__ == '__main__':

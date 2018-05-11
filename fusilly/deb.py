@@ -25,19 +25,25 @@ class Deb(object):
         if not 'deb-compression' in options:
             options['deb-compression'] = 'bzip2'
 
-        with NamedTemporaryFile(prefix='includes') as f:
+        with NamedTemporaryFile(prefix='%s-includes-' % package_name) as f:
             deb = Deb(package_name, files, options, dir_mappings)
             # these should be files only, fpm will create the directories for us if we need
             # them. If you want an empty dir, has to be in dir_mappinmgs
-            files = ["%s=%s" % (file, os.path.join(target_directory, file))
-                     for file in files if os.path.isdir(file)]
+            files = ["%s=%s" % (filename, os.path.join(target_directory, filename))
+                     for filename in files if not os.path.isdir(filename)]
             files_str = '\n'.join(files)
             dir_mappings = ' '.join(dir_mappings)
             f.write(files_str)
             f.flush()
-            cmd = 'fpm -t deb %s -n %s -s dir --inputs %s %s' % (
-                deb.options_str, package_name, '/home/shaw/include-files.txt', dir_mappings
-            )
+            # try to ensure that content is on disk before fpm tries to read it
+            os.fsync(f.fileno())
+            cmd = 'fpm -t deb {user_options} -n {package_name} -s dir ' \
+                  '--inputs {src_input} {dir_mappings}'.format(
+                    user_options=deb.options_str,
+                    package_name=package_name,
+                    src_input=f.name,
+                    dir_mappings=dir_mappings,
+                  )
             cmd_array = cmd.split(' ')
             logger.debug("Running: %s", cmd)
             subprocess.call(cmd_array)

@@ -30,6 +30,7 @@ class Target(object):
         self._files_expanded = None     # set of all source files without globs
         self._exclude_files_expanded = set()
         self.srcs = None                # final set of required source files
+        self.build_file_dir = None
 
     @classmethod
     def from_dict(cls, target_dict):
@@ -43,6 +44,10 @@ class Target(object):
                 return 1
         return 0
 
+    def maybe_set_buildfile_dir(self, path):
+        if self.build_file_dir is None:
+            self.build_file_dir = path
+
     def flatten(self, lists):
         elements = []
 
@@ -55,6 +60,12 @@ class Target(object):
         return elements
 
     def hydrate(self):
+        current_dir = os.getcwd()
+
+        # globs are relative to the directory of the BUILD file,
+        # so change to that directory before expansion
+        os.chdir(self.build_file_dir)
+
         self._files_expanded = [glob(file_glob) for file_glob in self.files]
         self._files_expanded = self.flatten(self._files_expanded)
         self._files_expanded = set(self._files_expanded)
@@ -71,6 +82,8 @@ class Target(object):
 
         self.srcs = self._files_expanded - self._exclude_files_expanded
 
+        # preserve directory caller expects
+        os.chdir(current_dir)
 
 class TargetCollection(collections.Mapping):
     def __init__(self):
@@ -93,6 +106,10 @@ class TargetCollection(collections.Mapping):
     def __iter__(self):
         for target in self.target_dict:
             yield target
+
+    def set_buildfile_dir(self, path):
+        for target in self.target_dict.itervalues():
+            target.maybe_set_buildfile_dir(path)
 
 
 def python_artifact(name, files=None, artifact=None, pip_requirements=None,

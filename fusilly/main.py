@@ -97,6 +97,7 @@ class BuildFiles(object):
             logger.info("Loading BUILD from %s", buildFile.dir)
             # pylint: disable=W0122
             exec(buildFile.source(), globals(), locals())
+            Targets.set_buildfile_dir(buildFile.dir)
 
         os.chdir(cwd)
 
@@ -121,39 +122,36 @@ def do_build(buildFiles, args):
     logger.info("Building %s...", target.name)
     target.hydrate()
 
-    if target.pip_requirements:
+    try:
         tempdir = tempfile.mkdtemp()
-        try:
+        if target.pip_requirements and not args.skip_virtualenv:
             virtualenv_path = os.path.join(
                 tempdir, "virtualenv"
             )
-
             Virtualenv.create(
                 target.name,
                 target.pip_requirements,
                 virtualenv_path
             )
-
-            if target.artifact:
-                fpm_options = target.artifact.get('fpm_options', None)
-                if target.pip_requirements:
-                    ve_install_path = os.path.join(
+            ve_install_path = os.path.join(
                     target.artifact.get('target_directory')
-                    )
-                else:
-                    ve_install_path = None
+            )
+        else:
+            ve_install_path = None
 
-                Deb.create(
-                    target.artifact['name'],
-                    target.artifact['target_directory'],
-                    target.srcs,
-                    fpm_options,
-                    dir_mappings=[
-                        '%s=%s' % (virtualenv_path, ve_install_path),
-                    ]
-                )
-        finally:
-            shutil.rmtree(tempdir)
+        if target.artifact and not args.skip_artifact:
+            fpm_options = target.artifact.get('fpm_options', None)
+            Deb.create(
+                target.artifact['name'],
+                target.artifact['target_directory'],
+                target.srcs,
+                fpm_options,
+                dir_mappings=[
+                    '%s=%s' % (virtualenv_path, ve_install_path),
+                ]
+            )
+    finally:
+        shutil.rmtree(tempdir)
 
 
 def main():
@@ -165,6 +163,10 @@ def main():
     argParser.add_argument('command', choices=COMMANDS)
     argParser.add_argument('--logging', choices=['info', 'warn', 'debug'],
                            help='log level', default='info')
+    argParser.add_argument('--skip-virtualenv', type=bool, default=False,
+                           help="Skip virtualenv creation and bundling (dev)")
+    argParser.add_argument('--skip-artifact', type=bool, default=False,
+                           help="skip bundling (dev)")
     argParser.add_argument('args', nargs=argparse.REMAINDER)
     args = argParser.parse_args()
 

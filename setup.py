@@ -39,7 +39,7 @@ setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'silly = fusilly.main:main',
+            'fusilly = fusilly.main:main',
         ],
     },
     extras_require={

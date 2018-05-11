@@ -45,11 +45,13 @@ class BuildFiles(object):
 
     def find_build_files_in(self, directory):
         builds = []
+        third_party_dirs = ['vendor', 'node_modules']
         for root, dirs, files in os.walk(directory, topdown=True):
             # skip over hidden directories...
             # skip over the case where go has brought in deps that contain their own
             # BUILD files.
-            dirs[:] = [d for d in dirs if not d[0] == '.' or d == 'vendor']
+            dirs[:] = [d for d in dirs if not d[0] == '.' or
+                       d in third_party_dirs]
             logger.debug("Checking %s for build files", root)
             if 'BUILD' in files:
                 buildFilePath = os.path.join(root, 'BUILD')

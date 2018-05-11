@@ -46,7 +46,10 @@ class BuildFiles(object):
     def find_build_files_in(self, directory):
         builds = []
         for root, dirs, files in os.walk(directory, topdown=True):
-            dirs[:] = [d for d in dirs if not d[0] == '.']
+            # skip over hidden directories...
+            # skip over the case where go has brought in deps that contain their own
+            # BUILD files.
+            dirs[:] = [d for d in dirs if not d[0] == '.' or d == 'vendor']
             logger.debug("Checking %s for build files", root)
             if 'BUILD' in files:
                 buildFilePath = os.path.join(root, 'BUILD')
@@ -89,7 +92,7 @@ class BuildFiles(object):
 
         for buildFile in self.builds:
             os.chdir(buildFile.dir)
-            logger.debug("Loading BUILD from %s", buildFile.dir)
+            logger.info("Loading BUILD from %s", buildFile.dir)
             # pylint: disable=W0122
             exec(buildFile.source(), globals(), locals())
 
@@ -128,7 +131,6 @@ def do_build(buildFiles, args):
                 target.pip_requirements,
                 virtualenv_path
             )
-            #target.add_virtualenv(virtualenv_path)
 
             if target.artifact:
                 fpm_options = target.artifact.get('fpm_options', None)

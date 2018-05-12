@@ -39,8 +39,9 @@ class Target(object):
     def check(self):
         if self.artifact and self.artifact['type'] is 'deb':
             if not is_installed('fpm'):
-                logger.error('fpm not installed; %s cannot be assembled',
+                logger.error("fpm not installed; %s cannot be assembled",
                              self.artifact['name'])
+                logger.info("fpm installation instructions at http://fpm.readthedocs.io/en/latest/installing.html")
                 return 1
         return 0
 

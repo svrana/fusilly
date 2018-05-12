@@ -11,13 +11,13 @@ logger = logging.getLogger(__file__)
 
 
 class Target(object):
-    def __init__(self, name, files, exclude_files=None, pip_requirements=None,
-                 artifact=None, **kwargs):
+    def __init__(self, name, files, exclude_files, artifact, virtualenv,
+                 **kwargs):
         self.name = name
         self.files = self.flatten(to_iterable(files))
         self.exclude_files = self.flatten(to_iterable(exclude_files))
-        self.pip_requirements = to_iterable(pip_requirements)
-        self.run = kwargs.get('run')
+        self.run = kwargs.pop('run', None)
+
         self.artifact = artifact
         if not isinstance(self.artifact, dict):
             raise BuildConfigError("artifact must be a dictionary")
@@ -25,8 +25,26 @@ class Target(object):
             raise BuildConfigError("artifact must contain a 'name' key")
         if not self.artifact.get('type'):
             raise BuildConfigError("artifact must contain a 'type' key")
-        self.artifact = artifact
-        self.other = kwargs
+
+        self.virtualenv = virtualenv
+        if virtualenv:
+            if not isinstance(virtualenv, dict):
+                raise BuildConfigError('virtualenv must be a dictionary')
+            if not virtualenv.get('requirements'):
+                raise BuildConfigError(
+                    "virtualenv must contain a 'requirements key'"
+                )
+            if not virtualenv.get('target_directory'):
+                raise BuildConfigError(
+                    "virtualenv must contain a 'target_directory' key"
+                )
+
+            self.virtualenv['requirements'] = to_iterable(
+                self.virtualenv['requirements']
+            )
+
+        self.custom_options = kwargs
+
         self._files_expanded = None     # set of all source files without globs
         self._exclude_files_expanded = set()
         self.srcs = None                # final set of required source files
@@ -52,9 +70,11 @@ class Target(object):
 
     def _expand_paths(self):
         path = self.buildFile.dir
-        self.pip_requirements = [
-                os.path.join(path, req) for req in self.pip_requirements
-        ]
+        if self.virtualenv:
+            self.virtualenv['requirements'] = [
+                os.path.join(path, req)
+                for req in self.virtualenv['requirements']
+            ]
 
     def flatten(self, lists):
         elements = []
@@ -123,21 +143,20 @@ class TargetCollection(collections.Mapping):
             target.maybe_set_buildfile(buildFile)
 
 
-def python_artifact(name, files=None, artifact=None, pip_requirements=None,
-                    exclude_files=None,
-                    **kwargs):
+def python_artifact(name, files=None, exclude_files=None, artifact=None,
+                    virtualenv=None, **kwargs):
     if not artifact:
         raise BuildConfigError(
-            "build target %s must specify an 'artifact'", name
+            "build target of type %s must specify an 'artifact'", name
         )
 
     Targets.add(dict(
         func='make build',
         name=name,
         files=files,
-        artifact=artifact,
-        pip_requirements=pip_requirements,
         exclude_files=exclude_files,
+        virtualenv=virtualenv,
+        artifact=artifact,
         **kwargs
     ))
 

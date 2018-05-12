@@ -10,13 +10,6 @@ class Virtualenv(object):
         self.reqs = pip_requirements_files
         self.path = path
 
-    def _prep(self):
-        ret = subprocess.call(['rm', '-rf', '%s' % self.path])
-        if ret != 0:
-            raise VirtualenvCreationFailure(
-                'Could not remove existing virtualenv at %s', self.path
-            )
-
     def _create(self):
         ret = subprocess.call(
             ['python', '-m', 'virtualenv', '%s' % self.path]
@@ -35,7 +28,6 @@ class Virtualenv(object):
     def create(cls, identifier, pip_requirements_files, virtualenv_path):
         virtualenv = Virtualenv(identifier, pip_requirements_files,
                                 virtualenv_path)
-        virtualenv._prep()
         virtualenv._create()
         virtualenv._load()
         return virtualenv

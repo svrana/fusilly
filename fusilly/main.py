@@ -125,24 +125,23 @@ def do_build(buildFiles, programArgs):
 
     try:
         dir_mappings = []
-        tempdir = tempfile.mkdtemp()
-        if target.pip_requirements and not programArgs.skip_virtualenv:
-            virtualenv_path = os.path.join(
-                tempdir, "virtualenv"
-            )
+        tempdir = tempfile.mkdtemp(prefix='fusilly-')
+        if target.virtualenv and not programArgs.skip_virtualenv:
+            logger.info("Installing %s deps into virtualenv",
+                        ' '.join(target.virtualenv['requirements']))
             Virtualenv.create(
                 target.name,
-                target.pip_requirements,
-                virtualenv_path
+                target.virtualenv['requirements'],
+                tempdir,
             )
-            ve_install_path = os.path.join(
-                    target.artifact.get('target_directory')
-            )
+            logging.info("virtualenv creation complete")
+
             dir_mappings.append(
-                '%s=%s' % (virtualenv_path, ve_install_path)
+                '%s=%s' % (tempdir, target.virtualenv['target_directory'])
             )
 
         if target.artifact and not programArgs.skip_artifact:
+            logger.info("Bundling %s", target.name)
             fpm_options = target.artifact.get('fpm_options', None)
             Deb.create(
                 buildFiles.project_root,
@@ -152,11 +151,12 @@ def do_build(buildFiles, programArgs):
                 fpm_options,
                 dir_mappings
             )
+            logging.info("Bundling complete")
     except BuildError:
         logger.error('Cannot continue; build failed')
         raise
-
     finally:
+        logger.info("removing temporary directory %s", tempdir)
         shutil.rmtree(tempdir)
 
 

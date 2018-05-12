@@ -30,7 +30,6 @@ class Target(object):
         self._files_expanded = None     # set of all source files without globs
         self._exclude_files_expanded = set()
         self.srcs = None                # final set of required source files
-        self.build_file_dir = None
         self.buildFile = None
 
     @classmethod
@@ -48,10 +47,10 @@ class Target(object):
     def maybe_set_buildfile(self, buildFile):
         if self.buildFile is None:
             self.buildFile = buildFile
-            self.set_buildfile_dir(buildFile.dir)
+            self._expand_paths()
 
-    def set_buildfile_dir(self, path):
-        self.build_file_dir = path
+    def _expand_paths(self):
+        path = self.buildFile.dir
         self.pip_requirements = [
                 os.path.join(path, req) for req in self.pip_requirements
         ]
@@ -68,11 +67,11 @@ class Target(object):
         return elements
 
     def hydrate(self):
-        current_dir = os.getcwd()
+        previous_dir = os.getcwd()
 
         # globs are relative to the directory of the BUILD file,
         # so change to that directory before expansion
-        os.chdir(self.build_file_dir)
+        os.chdir(self.buildFile.dir)
 
         self._files_expanded = [glob(file_glob) for file_glob in self.files]
         self._files_expanded = self.flatten(self._files_expanded)
@@ -93,7 +92,8 @@ class Target(object):
         self.srcs = self._files_expanded - self._exclude_files_expanded
 
         # preserve directory caller expects
-        os.chdir(current_dir)
+        os.chdir(previous_dir)
+
 
 class TargetCollection(collections.Mapping):
     def __init__(self):
@@ -129,12 +129,6 @@ def python_artifact(name, files=None, artifact=None, pip_requirements=None,
         raise BuildConfigError(
             "build target %s must specify an 'artifact'", name
         )
-
-    if pip_requirements:
-        cwd = os.getcwd()
-        pip_requirements = os.path.abspath(
-            os.path.join(cwd, pip_requirements)
-    )
 
     Targets.add(dict(
         func='make build',

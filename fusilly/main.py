@@ -9,6 +9,7 @@ import shutil
 import tempfile
 
 from fusilly.deb import Deb
+from fusilly.exceptions import BuildError
 # pylint: disable=W0611
 from fusilly.targets import Targets, python_artifact    # noqa
 from fusilly.virtualenv import Virtualenv
@@ -151,6 +152,10 @@ def do_build(buildFiles, programArgs):
                 fpm_options,
                 dir_mappings
             )
+    except BuildError:
+        logger.error('Cannot continue; build failed')
+        raise
+
     finally:
         shutil.rmtree(tempdir)
 

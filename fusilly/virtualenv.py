@@ -27,7 +27,9 @@ class Virtualenv(object):
     def _load(self):
         pip = os.path.join(self.path, 'bin', 'pip')
         for req in self.reqs:
-            subprocess.call([pip, 'install', '-r', req])
+            ret = subprocess.call([pip, 'install', '-r', req])
+            if ret != 0:
+                raise VirtualenvCreationFailure()
 
     @classmethod
     def create(cls, identifier, pip_requirements_files, virtualenv_path):

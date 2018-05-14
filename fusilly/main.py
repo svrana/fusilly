@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
+import json # noqa
+import logging
 import os
 import os.path
-import logging
 import sys
 
 # pylint: disable=W0611

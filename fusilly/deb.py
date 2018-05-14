@@ -40,10 +40,10 @@ class Deb(object):
         os.fsync(fd.fileno())
 
     @classmethod
-    def create(cls, project_root, package_name, target_directory, files, options,
-               dir_mappings):
+    def create(cls, project_root, package_name, target_directory, files,
+               options, dir_mappings):
         # bzip compresses better, but takes a little longer
-        if not 'deb-compression' in options:
+        if 'deb-compression' not in options:
             options['deb-compression'] = 'bzip2'
 
         with NamedTemporaryFile(prefix='%s-includes-' % package_name) as f:

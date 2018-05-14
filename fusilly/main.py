@@ -5,14 +5,12 @@ import os
 import os.path
 import logging
 import sys
-import shutil
-import tempfile
 
-from fusilly.deb import Deb
-from fusilly.exceptions import BuildError
 # pylint: disable=W0611
-from fusilly.targets import Targets, python_artifact    # noqa
-from fusilly.virtualenv import Virtualenv
+from fusilly.targets import ( # noqa
+    Targets,
+    python_artifact,
+)
 
 
 stream_handler = logging.StreamHandler()
@@ -45,6 +43,7 @@ class BuildFiles(object):
 
     def find_build_files_in(self, directory):
         builds = []
+        # TODO: global config file, living at root to control things like this
         third_party_dirs = ['vendor', 'node_modules']
         for root, dirs, files in os.walk(directory, topdown=True):
             # skip over hidden directories...
@@ -107,12 +106,19 @@ def add_target_subparser(cmd, argParser):
     subparsers = argParser.add_subparsers(dest='subparser_name',
                                           help='Project to build')
     for target in Targets.itervalues():
-        subparsers.add_parser(target.name, help='%s %s' % (cmd, target.name))
+        tp = subparsers.add_parser(
+            target.name, help='%s %s' % (cmd, target.name)
+        )
+        for optname, default_value in target.custom_options.iteritems():
+            option = '--%s' % optname
+            tp.add_argument(option, type=str, default=default_value)
 
 
 def do_build(buildFiles, programArgs):
     argParser = argparse.ArgumentParser(description='Build project')
     add_target_subparser('build', argParser)
+
+    argParser.add_argument('args', nargs=argparse.REMAINDER)
     subArgs = argParser.parse_args(programArgs.args)
     target_name = subArgs.subparser_name
     target = Targets.get(target_name)
@@ -122,42 +128,7 @@ def do_build(buildFiles, programArgs):
 
     logger.info("Building %s...", target.name)
     target.hydrate()
-
-    try:
-        dir_mappings = []
-        tempdir = tempfile.mkdtemp(prefix='fusilly-')
-        if target.virtualenv and not programArgs.skip_virtualenv:
-            logger.info("Installing %s deps into virtualenv",
-                        ' '.join(target.virtualenv['requirements']))
-            Virtualenv.create(
-                target.name,
-                target.virtualenv['requirements'],
-                tempdir,
-            )
-            logging.info("virtualenv creation complete")
-
-            dir_mappings.append(
-                '%s=%s' % (tempdir, target.virtualenv['target_directory'])
-            )
-
-        if target.artifact and not programArgs.skip_artifact:
-            logger.info("Bundling %s", target.name)
-            fpm_options = target.artifact.get('fpm_options', None)
-            Deb.create(
-                buildFiles.project_root,
-                target.artifact['name'],
-                target.artifact['target_directory'],
-                target.srcs,
-                fpm_options,
-                dir_mappings
-            )
-            logging.info("Bundling complete")
-    except BuildError:
-        logger.error('Cannot continue; build failed')
-        raise
-    finally:
-        logger.info("removing temporary directory %s", tempdir)
-        shutil.rmtree(tempdir)
+    target.func(buildFiles, target, programArgs)
 
 
 def main():

@@ -17,7 +17,7 @@ logger = logging.getLogger(__file__)
 def _python_artifact_bundle(buildFiles, target, programArgs):
     try:
         dir_mappings = []
-        tempdir = tempfile.mkdtemp(prefix='fusilly-')
+        tempdir = tempfile.mkdtemp(prefix='fusilly-%s' % target.name)
         if target.virtualenv and not programArgs.skip_virtualenv:
             logger.info("Installing %s deps into virtualenv",
                         ' '.join(target.virtualenv['requirements']))

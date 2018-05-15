@@ -8,6 +8,7 @@ from glob2 import glob
 from fusilly.exceptions import (
     DuplicateTargetError,
     BuildConfigError,
+    MissingTemplateValue
 )
 from fusilly.utils import (
     filter_dict,
@@ -137,18 +138,23 @@ class Target(object):
     def make_cmdline_substitions(self, argDict, options):
         pattern = re.compile(r'{{(\w+)}}')
 
+        #import pdb ; pdb.set_trace()
         for key, _ in options.iteritems():
             while True:
-                value = options[key]
+                value = str(options[key])
                 match = pattern.search(value)
-                if match:
-                    replace_value = argDict.get(match.group(1))
-                    if replace_value is not None:
-                        start, end = match.span()
-                        options[key] = value[0:start] + replace_value + \
-                            value[end:]
-                else:
+                if not match:
                     break
+
+                replace_value = argDict.get(match.group(1))
+                if replace_value is None:
+                    err = "Found '{{%s}}' without a definition" % match.group(1)
+                    raise MissingTemplateValue(err)
+
+                start, end = match.span()
+                options[key] = value[0:start] + replace_value + value[end:]
+
+
 
     def hydrate(self, args):
         cmdline_opts = filter_dict(args.__dict__, ['subparser_name', 'args'])

@@ -144,6 +144,8 @@ def main():
     argParser.add_argument('command', choices=COMMANDS)
     argParser.add_argument('--logging', choices=['info', 'warn', 'debug'],
                            help='log level', default='info')
+    argParser.add_argument('--skip-build', action='store_true',
+                           help="Skip the user defined build command")
     argParser.add_argument('--skip-virtualenv', action='store_true',
                            help="Skip virtualenv creation and bundling (dev)")
     argParser.add_argument('--skip-artifact', action='store_true',

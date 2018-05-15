@@ -16,3 +16,15 @@ class DuplicateTargetError(BuildConfigError):
 
 class VirtualenvCreationFailure(BuildError):
     pass
+
+
+class DebCreationFailure(BuildError):
+    pass
+
+
+class UserSuppliedBuildCmdFailure(BuildError):
+    pass
+
+
+class MissingTemplateValue(BuildError):
+    pass

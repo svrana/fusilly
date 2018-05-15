@@ -1,11 +1,13 @@
 import logging
 import tempfile
 import shutil
+import subprocess
 
 from fusilly.deb import Deb
 from fusilly.exceptions import (
     BuildConfigError,
     BuildError,
+    UserSuppliedBuildCmdFailure,
 )
 from fusilly.virtualenv import Virtualenv
 
@@ -15,6 +17,12 @@ logger = logging.getLogger(__file__)
 
 
 def _python_artifact_bundle(buildFiles, target, programArgs):
+    if target.build and not programArgs.skip_build:
+        logger.info("Running build command %s", target.build)
+        ret = subprocess.call(target.build.split(' '))
+        if ret:
+            raise UserSuppliedBuildCmdFailure()
+
     try:
         dir_mappings = []
         tempdir = tempfile.mkdtemp(prefix='fusilly-%s' % target.name)
@@ -68,4 +76,3 @@ def python_artifact(name, files=None, exclude_files=None, artifact=None,
         artifact=artifact,
         **kwargs
     ))
-

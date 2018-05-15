@@ -3,6 +3,8 @@ import os
 import subprocess
 from tempfile import NamedTemporaryFile
 
+from fusilly.exceptions import DebCreationFailure
+
 
 logger = logging.getLogger(__file__)
 
@@ -62,5 +64,7 @@ class Deb(object):
 
             cmd_array = cmd.split(' ')
             logger.debug("Running: %s", cmd)
-            subprocess.call(cmd_array)
+            ret = subprocess.call(cmd_array)
+            if ret:
+                raise DebCreationFailure()
             return deb

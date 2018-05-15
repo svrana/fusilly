@@ -91,12 +91,12 @@ class BuildFiles(object):
             sys.exit(1)
 
         for buildFile in self.builds:
-            logger.info("Loading BUILD from %s", buildFile.dir)
+            logger.debug("Loading BUILD from %s", buildFile.dir)
 
             # pylint: disable=W0122
             exec(buildFile.source(), globals(), locals())
 
-            # We don't know which targets were just loaded, but we want each
+            # We don't know which targets were just loaded, but we need each
             # one to know which buildFile its associated with.
             # TODO: should be able to pass this in the environment during exec
             # and grab it from there.
@@ -108,14 +108,17 @@ def add_target_subparser(cmd, argParser):
                                           help='Project to build')
     for target in Targets.itervalues():
         tp = subparsers.add_parser(
-            target.name, help='%s %s' % (cmd, target.name)
+            target.name, help='%s %s' % (cmd, target.name),
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
         for optname, default_value in target.custom_options.iteritems():
             option = '--%s' % optname
-            tp.add_argument(option, type=str, default=default_value)
+            # non-empty help to get the ArgumentDefaultsHelpFormatter to show
+            # the defaults
+            tp.add_argument(option, type=str, default=default_value, help=' ')
 
 
-def do_build(buildFiles, programArgs):
+def build_target(buildFiles, programArgs):
     argParser = argparse.ArgumentParser(description='Build project')
     add_target_subparser('build', argParser)
 
@@ -128,13 +131,13 @@ def do_build(buildFiles, programArgs):
         sys.exit(1)
 
     logger.info("Building %s...", target.name)
-    target.hydrate()
+    target.hydrate(subArgs)
     target.func(buildFiles, target, programArgs)
 
 
 def main():
     COMMANDS = {
-        'build': do_build,
+        'build': build_target,
     }
 
     argParser = argparse.ArgumentParser(description='Build and bundle')

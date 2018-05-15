@@ -1,28 +1,29 @@
 import collections
 import logging
 import os
-import tempfile
-import shutil
+import re
 
 from glob2 import glob
 
-from fusilly.deb import Deb
 from fusilly.exceptions import (
     DuplicateTargetError,
     BuildConfigError,
-    BuildError,
 )
-from fusilly.virtualenv import Virtualenv
-from fusilly.utils import to_iterable, is_installed
+from fusilly.utils import (
+    filter_dict,
+    is_installed,
+    to_iterable,
+)
 
 logger = logging.getLogger(__file__)
 
 
 class Target(object):
-    def __init__(self, name, func, files, exclude_files, artifact, virtualenv,
-                 **kwargs):
+    def __init__(self, name, func, files, artifact, **kwargs):
         self.name = name
         self.files = self.flatten(to_iterable(files))
+
+        exclude_files = kwargs.pop('exclude_files', None)
         self.exclude_files = self.flatten(to_iterable(exclude_files))
         self.run = kwargs.pop('run', None)
         # Unused except to map the new build files to the existing bob code,
@@ -42,15 +43,15 @@ class Target(object):
         if not self.artifact.get('type'):
             raise BuildConfigError("artifact must contain a 'type' key")
 
-        self.virtualenv = virtualenv
-        if virtualenv:
-            if not isinstance(virtualenv, dict):
+        self.virtualenv = kwargs.pop('virtualenv', None)
+        if self.virtualenv:
+            if not isinstance(self.virtualenv, dict):
                 raise BuildConfigError('virtualenv must be a dictionary')
-            if not virtualenv.get('requirements'):
+            if not self.virtualenv.get('requirements'):
                 raise BuildConfigError(
                     "virtualenv must contain a 'requirements key'"
                 )
-            if not virtualenv.get('target_directory'):
+            if not self.virtualenv.get('target_directory'):
                 raise BuildConfigError(
                     "virtualenv must contain a 'target_directory' key"
                 )
@@ -103,7 +104,7 @@ class Target(object):
 
         return elements
 
-    def hydrate(self):
+    def globs(self):
         previous_dir = os.getcwd()
 
         # globs are relative to the directory of the BUILD file,
@@ -123,13 +124,44 @@ class Target(object):
             self._exclude_files_expanded = self.flatten(
                 self._exclude_files_expanded
             )
-            self._exclude_files_expanded = [os.path.abspath(f) for f in self._exclude_files_expanded]
+            self._exclude_files_expanded = [
+                os.path.abspath(f) for f in self._exclude_files_expanded
+            ]
             self._exclude_files_expanded = set(self._exclude_files_expanded)
 
         self.srcs = self._files_expanded - self._exclude_files_expanded
 
         # preserve directory caller expects
         os.chdir(previous_dir)
+
+    def make_cmdline_substitions(self, argDict, options):
+        pattern = re.compile(r'{{(\w+)}}')
+
+        for key, _ in options.iteritems():
+            while True:
+                value = options[key]
+                match = pattern.search(value)
+                if match:
+                    replace_value = argDict.get(match.group(1))
+                    if replace_value is not None:
+                        start, end = match.span()
+                        options[key] = value[0:start] + replace_value + \
+                            value[end:]
+                else:
+                    break
+
+    def hydrate(self, args):
+        cmdline_opts = filter_dict(args.__dict__, ['subparser_name', 'args'])
+        # allow build command to use command-line passed values too
+        if self.build:
+            cmdline_opts['build'] = self.build
+        if self.artifact:
+            cmdline_opts['artifact'] = self.artifact
+
+        self.make_cmdline_substitions(cmdline_opts, self.custom_options)
+        self.build = cmdline_opts['build']
+        self.artifact = cmdline_opts['artifact']
+        self.globs()
 
 
 class TargetCollection(collections.Mapping):
@@ -157,62 +189,6 @@ class TargetCollection(collections.Mapping):
     def maybe_set_buildfile(self, buildFile):
         for target in self.target_dict.itervalues():
             target.maybe_set_buildfile(buildFile)
-
-
-def _python_artifact_bundle(buildFiles, target, programArgs):
-    try:
-        dir_mappings = []
-        tempdir = tempfile.mkdtemp(prefix='fusilly-')
-        if target.virtualenv and not programArgs.skip_virtualenv:
-            logger.info("Installing %s deps into virtualenv",
-                        ' '.join(target.virtualenv['requirements']))
-            Virtualenv.create(
-                target.name,
-                target.virtualenv['requirements'],
-                tempdir,
-            )
-            logging.info("virtualenv creation complete")
-
-            dir_mappings.append(
-                '%s=%s' % (tempdir, target.virtualenv['target_directory'])
-            )
-
-        if target.artifact and not programArgs.skip_artifact:
-            logger.info("Bundling %s", target.name)
-            fpm_options = target.artifact.get('fpm_options', None)
-            Deb.create(
-                buildFiles.project_root,
-                target.artifact['name'],
-                target.artifact['target_directory'],
-                target.srcs,
-                fpm_options,
-                dir_mappings
-            )
-            logging.info("Bundling complete")
-    except BuildError:
-        logger.error('Cannot continue; build failed')
-        raise
-    finally:
-        logger.info("removing temporary directory %s", tempdir)
-        shutil.rmtree(tempdir)
-
-
-def python_artifact(name, files=None, exclude_files=None, artifact=None,
-                    virtualenv=None, **kwargs):
-    if not artifact:
-        raise BuildConfigError(
-            "build target of type %s must specify an 'artifact'", name
-        )
-
-    Targets.add(dict(
-        func=_python_artifact_bundle,
-        name=name,
-        files=files,
-        exclude_files=exclude_files,
-        virtualenv=virtualenv,
-        artifact=artifact,
-        **kwargs
-    ))
 
 
 Targets = TargetCollection()

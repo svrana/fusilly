@@ -1,6 +1,6 @@
 import os
-import subprocess
 
+from .command import Command
 from .exceptions import VirtualenvCreationFailure
 
 
@@ -11,16 +11,16 @@ class Virtualenv(object):
         self.path = path
 
     def _create(self):
-        ret = subprocess.call(
-            ['python', '-m', 'virtualenv', '%s' % self.path]
-        )
+        cmd = 'python -m virtualenv %s' % self.path
+        ret = Command(cmd).run()
         if ret != 0:
             raise VirtualenvCreationFailure()
 
     def _load(self):
         pip = os.path.join(self.path, 'bin', 'pip')
         for req in self.reqs:
-            ret = subprocess.call([pip, 'install', '-r', req])
+            cmd = '%s install -r %s' % (pip, req)
+            ret = Command(cmd).run()
             if ret != 0:
                 raise VirtualenvCreationFailure()
 

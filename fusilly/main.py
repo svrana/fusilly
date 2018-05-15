@@ -19,7 +19,7 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 stream_handler.setFormatter(formatter)
 root_logger = logging.getLogger('')
 root_logger.addHandler(stream_handler)
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class BuildFile(object):
@@ -48,8 +48,8 @@ class BuildFiles(object):
         third_party_dirs = ['vendor', 'node_modules']
         for root, dirs, files in os.walk(directory, topdown=True):
             # skip over hidden directories...
-            # skip over the case where go has brought in deps that contain their own
-            # BUILD files.
+            # skip over the case where go has brought in deps that contain
+            # their own BUILD files.
             dirs[:] = [d for d in dirs if not d[0] == '.' or
                        d in third_party_dirs]
             logger.debug("Checking %s for build files", root)
@@ -155,7 +155,7 @@ def main():
     argParser.add_argument('args', nargs=argparse.REMAINDER)
     args = argParser.parse_args()
 
-    logger.setLevel(args.logging.upper())
+    root_logger.setLevel(args.logging.upper())
 
     buildFiles = BuildFiles()
     buildFiles.load()

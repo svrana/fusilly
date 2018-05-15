@@ -16,7 +16,7 @@ from fusilly.utils import (
     to_iterable,
 )
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class Target(object):
@@ -33,28 +33,36 @@ class Target(object):
         # Command to run that will  kick off the build, typically npm build,
         # make, etc
         self.build = kwargs.pop('build', None)
+        if self.build:
+            if not isinstance(self.build, dict):
+                raise BuildConfigError("'build' must be a dictionary")
+            if not self.build.get('command'):
+                raise BuildConfigError("'build' must contain a 'command' key")
+            if not self.build.get('directory'):
+                self.build['directory'] = '.'
+
         # Internal function that is called to do the work of the target
         self.func = func
 
         self.artifact = artifact
         if not isinstance(self.artifact, dict):
-            raise BuildConfigError("artifact must be a dictionary")
+            raise BuildConfigError("'artifact' must be a dictionary")
         if not self.artifact.get('name'):
-            raise BuildConfigError("artifact must contain a 'name' key")
+            raise BuildConfigError("'artifact' must contain a 'name' key")
         if not self.artifact.get('type'):
-            raise BuildConfigError("artifact must contain a 'type' key")
+            raise BuildConfigError("'artifact' must contain a 'type' key")
 
         self.virtualenv = kwargs.pop('virtualenv', None)
         if self.virtualenv:
             if not isinstance(self.virtualenv, dict):
-                raise BuildConfigError('virtualenv must be a dictionary')
+                raise BuildConfigError("'virtualenv' must be a dictionary")
             if not self.virtualenv.get('requirements'):
                 raise BuildConfigError(
-                    "virtualenv must contain a 'requirements key'"
+                    "'virtualenv' must contain a 'requirements key'"
                 )
             if not self.virtualenv.get('target_directory'):
                 raise BuildConfigError(
-                    "virtualenv must contain a 'target_directory' key"
+                    "'virtualenv' must contain a 'target_directory' key"
                 )
 
             self.virtualenv['requirements'] = to_iterable(
@@ -93,6 +101,9 @@ class Target(object):
                 os.path.join(path, req)
                 for req in self.virtualenv['requirements']
             ]
+        if self.build:
+            path = os.path.join(self.buildFile.dir, self.build['directory'])
+            self.build['directory'] = os.path.abspath(path)
 
     def flatten(self, lists):
         elements = []
@@ -105,7 +116,7 @@ class Target(object):
 
         return elements
 
-    def globs(self):
+    def _globs(self):
         previous_dir = os.getcwd()
 
         # globs are relative to the directory of the BUILD file,
@@ -135,12 +146,16 @@ class Target(object):
         # preserve directory caller expects
         os.chdir(previous_dir)
 
-    def make_cmdline_substitions(self, argDict, options):
+    def _make_cmdline_substitions(self, argDict, options):
         pattern = re.compile(r'{{(\w+)}}')
 
-        #import pdb ; pdb.set_trace()
         for key, _ in options.iteritems():
             while True:
+                value = options[key]
+                if isinstance(value, dict):
+                    self._make_cmdline_substitions(argDict, value)
+                    break
+
                 value = str(options[key])
                 match = pattern.search(value)
                 if not match:
@@ -152,22 +167,25 @@ class Target(object):
                     raise MissingTemplateValue(err)
 
                 start, end = match.span()
-                options[key] = value[0:start] + replace_value + value[end:]
+                options[key] = value[0:start] + str(replace_value) + value[end:]
 
+    def _templating(self, cmdline_opts):
+        # allow build command to use command-line passed values too
+        if self.build:
+            self.custom_options['build'] = self.build
+        if self.artifact:
+            self.custom_options['artifact'] = self.artifact
 
+        self._make_cmdline_substitions(cmdline_opts, self.custom_options)
+
+        self.build = self.custom_options.pop('build', None)
+        self.artifact = self.custom_options.pop('artifact', None)
 
     def hydrate(self, args):
         cmdline_opts = filter_dict(args.__dict__, ['subparser_name', 'args'])
-        # allow build command to use command-line passed values too
-        if self.build:
-            cmdline_opts['build'] = self.build
-        if self.artifact:
-            cmdline_opts['artifact'] = self.artifact
+        self._templating(cmdline_opts)
 
-        self.make_cmdline_substitions(cmdline_opts, self.custom_options)
-        self.build = cmdline_opts['build']
-        self.artifact = cmdline_opts['artifact']
-        self.globs()
+        self._globs()
 
 
 class TargetCollection(collections.Mapping):

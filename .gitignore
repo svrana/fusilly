@@ -3,3 +3,4 @@ build/
 dist/
 fusilly.egg-info/
 .pytest_cache/
+.cache/

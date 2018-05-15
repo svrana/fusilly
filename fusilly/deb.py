@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 from fusilly.exceptions import DebCreationFailure
 
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class Deb(object):

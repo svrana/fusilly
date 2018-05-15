@@ -19,7 +19,7 @@ class TestTemplating(unittest.TestCase):
     def test_cmdline_substition(self):
         build_spec = dict(build="npm build --env={{env}}", foo="nothing here")
         args = {'env': 'production'}
-        self.test_target.make_cmdline_substitions(args, build_spec)
+        self.test_target._make_cmdline_substitions(args, build_spec)
         self.assertEqual(
             build_spec,
             dict(build="npm build --env=production", foo="nothing here")
@@ -28,7 +28,7 @@ class TestTemplating(unittest.TestCase):
     def test_cmdline_multi_substitution(self):
         build_spec = dict(build="npm build --env={{env}} --sha={{sha}}")
         args = {'env': 'production', 'sha': '1234'}
-        self.test_target.make_cmdline_substitions(args, build_spec)
+        self.test_target._make_cmdline_substitions(args, build_spec)
         self.assertEqual(
             build_spec,
             dict(build="npm build --env=production --sha=1234")
@@ -39,7 +39,7 @@ class TestTemplating(unittest.TestCase):
         args = {'env': 'production'}
         self.assertRaises(
             MissingTemplateValue,
-            self.test_target.make_cmdline_substitions,
+            self.test_target._make_cmdline_substitions,
             args,
             build_spec
         )
@@ -55,8 +55,17 @@ class TestTemplating(unittest.TestCase):
         build_spec = dict(build=cmd)
         args = {'static_file_host': 'cloudwatch.cdn.aws.com',
                 'cache_bust': '14'}
-        self.test_target.make_cmdline_substitions(args, build_spec)
+        self.test_target._make_cmdline_substitions(args, build_spec)
         self.assertEqual(
             build_spec,
             dict(build='npm run prod -- --env.staticUrlInfo={"cacheBust":"14","host":"cloudwatch.cdn.aws.com","hash":"12332"}')
+        )
+
+    def test_dict_of_dicts(self):
+        build_spec = {'build': {'command': "npm build --env={{env}} --sha={{sha}}"}}
+        args = {'env': 'production', 'sha': '1234'}
+        self.test_target._make_cmdline_substitions(args, build_spec)
+        self.assertEqual(
+            build_spec,
+            {'build': {'command': "npm build --env=production --sha=1234"}}
         )

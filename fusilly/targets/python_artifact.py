@@ -1,25 +1,24 @@
 import logging
 import tempfile
 import shutil
-import subprocess
 
+from fusilly.command import Command
 from fusilly.deb import Deb
 from fusilly.exceptions import (
     BuildConfigError,
     BuildError,
     UserSuppliedBuildCmdFailure,
 )
+from fusilly.targets import Targets
 from fusilly.virtualenv import Virtualenv
 
-from .targets import Targets
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def _python_artifact_bundle(buildFiles, target, programArgs):
     if target.build and not programArgs.skip_build:
-        logger.info("Running build command %s", target.build)
-        ret = subprocess.call(target.build.split(' '))
+        ret = Command(**target.build).run()
         if ret:
             raise UserSuppliedBuildCmdFailure()
 

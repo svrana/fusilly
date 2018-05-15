@@ -4,3 +4,4 @@ dist/
 fusilly.egg-info/
 .pytest_cache/
 .cache/
+.coverage

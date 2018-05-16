@@ -14,6 +14,8 @@ clean: cleanmeta ## removes build-related files
 	-rm -rf dist
 	-rm -rf build
 	-find . -type f -name ".*.py" -exec rm -f "{}" \;
+	-rm -f *.deb
+	-rm -f .coverage
 	-find . -type f -name "*.orig" -exec rm -f "{}" \;
 	-find . -type f -name "*.rej" -exec rm -f "{}" \;
 	-find . -type f -name "*.pyc" -exec rm -f "{}" \;

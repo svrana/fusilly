@@ -11,6 +11,8 @@ import sys
 from fusilly.targets import ( # noqa
     Targets,
     python_artifact,
+    virtualenv_target,
+    artifact_target
 )
 
 
@@ -23,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class BuildFile(object):
-    def __init__(self, path):
+    def __init__(self, project_root, path):
+        self.project_root = project_root
         self.path = path
         self.dir = os.path.dirname(path)
         self._source = None
@@ -55,7 +58,7 @@ class BuildFiles(object):
             logger.debug("Checking %s for build files", root)
             if 'BUILD' in files:
                 buildFilePath = os.path.join(root, 'BUILD')
-                buildFile = BuildFile(buildFilePath)
+                buildFile = BuildFile(self.project_root, buildFilePath)
                 logger.debug("Found %s", buildFilePath)
                 builds.append(buildFile)
         return builds
@@ -131,8 +134,12 @@ def build_target(buildFiles, programArgs):
         sys.exit(1)
 
     logger.info("Building %s...", target.name)
-    target.hydrate(subArgs)
-    target.func(buildFiles, target, programArgs)
+
+    # TODO: process each targets deps
+    try:
+        target.run({})
+    finally:
+        target.cleanup()
 
 
 def main():
@@ -144,8 +151,8 @@ def main():
     argParser.add_argument('command', choices=COMMANDS)
     argParser.add_argument('--logging', choices=['info', 'warn', 'debug'],
                            help='log level', default='info')
-    # skip-* options are in the wrong place. Probably should be added for each
-    # target.
+    # skip-* options are in the wrong place. Should be added for each
+    # dep contained in a Phony target
     argParser.add_argument('--skip-build', action='store_true',
                            help="Skip the user defined build command")
     argParser.add_argument('--skip-virtualenv', action='store_true',

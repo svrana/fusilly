@@ -5,9 +5,9 @@ from .exceptions import VirtualenvCreationFailure
 
 
 class Virtualenv(object):
-    def __init__(self, identifier, pip_requirements_files, path):
+    def __init__(self, identifier, requirements_file, path):
         self.id = identifier
-        self.reqs = pip_requirements_files
+        self.reqs = requirements_file
         self.path = path
 
     def _create(self):
@@ -18,11 +18,10 @@ class Virtualenv(object):
 
     def _load(self):
         pip = os.path.join(self.path, 'bin', 'pip')
-        for req in self.reqs:
-            cmd = '%s install -r %s' % (pip, req)
-            ret = Command(cmd).run()
-            if ret != 0:
-                raise VirtualenvCreationFailure()
+        cmd = '%s install -r %s' % (pip, self.reqs)
+        ret = Command(cmd).run()
+        if ret != 0:
+            raise VirtualenvCreationFailure()
 
     @classmethod
     def create(cls, identifier, pip_requirements_files, virtualenv_path):

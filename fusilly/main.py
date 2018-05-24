@@ -135,11 +135,11 @@ def build_target(buildFiles, programArgs):
 
     logger.info("Building %s...", target.name)
 
-    # TODO: process each targets deps
     try:
-        target.run({})
+        output_dict = target._do_deps({})
+        target.run(output_dict)
     finally:
-        target.cleanup()
+        target._cleanup()
 
 
 def main():
@@ -153,12 +153,12 @@ def main():
                            help='log level', default='info')
     # skip-* options are in the wrong place. Should be added for each
     # dep contained in a Phony target
-    argParser.add_argument('--skip-build', action='store_true',
-                           help="Skip the user defined build command")
-    argParser.add_argument('--skip-virtualenv', action='store_true',
-                           help="Skip virtualenv creation and bundling (dev)")
-    argParser.add_argument('--skip-artifact', action='store_true',
-                           help="skip bundling (dev)")
+    # argParser.add_argument('--skip-build', action='store_true',
+    #                        help="Skip the user defined build command")
+    # argParser.add_argument('--skip-virtualenv', action='store_true',
+    #                        help="Skip virtualenv creation and bundling (dev)")
+    # argParser.add_argument('--skip-artifact', action='store_true',
+    #                        help="skip bundling (dev)")
     argParser.add_argument('args', nargs=argparse.REMAINDER)
     args = argParser.parse_args()
 

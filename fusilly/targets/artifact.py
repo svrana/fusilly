@@ -5,7 +5,7 @@ from glob2 import glob
 
 from fusilly.deb import Deb
 from fusilly.exceptions import BuildConfigError
-from fusilly.utils import flatten, to_iterable
+from fusilly.utils import flatten, is_installed, to_iterable
 from .targets import Target
 
 
@@ -43,12 +43,12 @@ class ArtifactTarget(Target):
         os.chdir(previous_dir)
 
     def _get_dir_mappings(self, inputdict):
-        if 'dir_mappings' not in inputdict:
+        if 'artifact_dir_mappings' not in inputdict:
             return []
 
         expanded_mappings = []
 
-        dir_mappings = to_iterable(inputdict['dir_mappings'])
+        dir_mappings = to_iterable(inputdict['artifact_target_dir_mappings'])
         for dir_mapping in dir_mappings:
             source_dir, target_dir = dir_mapping.split('=')
             if not target_dir.startswith('/'):
@@ -56,6 +56,15 @@ class ArtifactTarget(Target):
             expanded_mappings.append("%s=%s" % (source_dir, target_dir))
 
         return expanded_mappings
+
+    def check(self):
+        if self.artifact_type is 'deb':
+            if not is_installed('fpm'):
+                logger.error("fpm not installed; %s cannot be assembled",
+                             self.artifact['name'])
+                logger.info("fpm installation instructions at http://fpm.readthedocs.io/en/latest/installing.html")
+                return 1
+        return 0
 
     def run(self, inputdict):
         self._globs()

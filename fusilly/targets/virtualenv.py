@@ -4,7 +4,6 @@ import tempfile
 import shutil
 
 from fusilly.virtualenv import Virtualenv
-
 from fusilly.exceptions import BuildConfigError
 from .targets import Target
 
@@ -14,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class VirtualenvTarget(Target):
     def _expand_paths(self):
+        # pylint: disable=W0201
         self.requirements = os.path.join(
             self.buildFile.dir, self.requirements
         )
@@ -21,6 +21,7 @@ class VirtualenvTarget(Target):
     def run(self, inputdict):
         self._expand_paths()
 
+        # pylint: disable=W0201
         self.tempdir = tempfile.mkdtemp(prefix='fusilly-%s' % self.name)
         logger.info("Installing %s deps into virtualenv", self.requirements)
 
@@ -31,10 +32,8 @@ class VirtualenvTarget(Target):
         )
         logging.info("virtualenv creation complete")
 
-        return dict(virtualenv=dict(
-            directory=self.tempdir,
-            target_directory_name=self.target_directory_name,
-        ))
+        dirmap = "%s=%s" % (self.tempdir, self.target_directory_name)
+        return dict(artifact_target_dir_mappings=dirmap)
 
     @classmethod
     def create(cls, name, requirements, target_directory, **kwargs):
@@ -48,7 +47,7 @@ class VirtualenvTarget(Target):
 
     def cleanup(self):
         if self.tempdir:
-            logger.info("removing temporary directory %s", self.tempdir)
+            logger.debug("removing temporary directory %s", self.tempdir)
             shutil.rmtree(self.tempdir)
 
 

@@ -43,7 +43,7 @@ class TargetCollection(collections.Mapping):
 
     def maybe_set_buildfile(self, buildFile):
         for target in self.target_dict.itervalues():
-            target.maybe_set_buildfile(buildFile)
+            target._maybe_set_buildfile(buildFile)
 
 
 Targets = TargetCollection()
@@ -60,15 +60,26 @@ class Target(object):
 
         # an optional list of dependencies. These are other targets that must
         # be run prior to the execution of this target.
-        self.deps = kwargs.pop('deps', [])
+        deps = kwargs.pop('deps', None)
+        self.deps = to_iterable(deps)
 
         self.custom_options = kwargs
 
         Targets.add(self)
 
     @abc.abstractmethod
-    def run(self, buildFiles, programArgs, inputdicts):
+    def run(self, inputdict):
         pass
+
+    def _do_deps(self, inputdict):
+        for depname in self.deps:
+            target = Targets.get(depname)
+            outputdict = target._do_deps(inputdict)
+            inputdict.update(outputdict)
+            outputdict = target.run(inputdict)
+            inputdict.update(outputdict)
+
+        return inputdict
 
     @classmethod
     def create(cls, *args, **kwargs):
@@ -84,12 +95,25 @@ class Target(object):
 
     def cleanup(self):
         """ Optional override that is called after entire build process is
-        completed. """
+        completed. Called in the success and failure cases. """
         pass
 
-    def maybe_set_buildfile(self, buildFile):
+    def _cleanup(self):
+        """ Internal method called to cleanup all targets. """
+        self._dep_cleanup()
+        self.cleanup()
+
+    def _maybe_set_buildfile(self, buildFile):
+        """ Internal method that associates this target with the buildFile
+        where it was defined. This is ugly, but simple. """
         if self.buildFile is None:
             self.buildFile = buildFile
+
+    def _dep_cleanup(self):
+        for depname in self.deps:
+            target = Targets.get(depname)
+            target._dep_cleanup()
+            target.cleanup()
 
 # class Target(object):
 #     def __init__(self, name, func, files, artifact, **kwargs):

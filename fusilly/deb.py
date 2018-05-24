@@ -33,7 +33,7 @@ class Deb(object):
         return srcs
 
     def write_mapping(self, fd, srcs):
-        files_str = '\n'.join(srcs) # fpm expects src=dst, one per line
+        files_str = '\n'.join(srcs)  # fpm expects src=dst, one per line
 
         fd.write(files_str)
         fd.flush()
@@ -63,7 +63,7 @@ class Deb(object):
                 cmd += ' %s' % ' '.join(dir_mappings)
 
             cmd_array = cmd.split(' ')
-            logger.debug("Running: %s", cmd)
+            logger.info("Running: %s", cmd)
             ret = subprocess.call(cmd_array)
             if ret:
                 raise DebCreationFailure()

@@ -9,6 +9,9 @@ artifact_target(
     files=[
         '**/*.py',
     ],
+    exclude_files=[
+        '**/test/**',
+    ],
     artifact={
         'name': 'fusilly',
         'type': 'deb',

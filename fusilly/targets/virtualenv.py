@@ -22,7 +22,7 @@ class VirtualenvTarget(Target):
         self._expand_paths()
 
         # pylint: disable=W0201
-        self.tempdir = tempfile.mkdtemp(prefix='fusilly-%s' % self.name)
+        self.tempdir = tempfile.mkdtemp(prefix='fusilly-%s-' % self.name)
         logger.info("Installing %s deps into virtualenv", self.requirements)
 
         Virtualenv.create(

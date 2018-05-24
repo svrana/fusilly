@@ -43,7 +43,7 @@ class ArtifactTarget(Target):
         os.chdir(previous_dir)
 
     def _get_dir_mappings(self, inputdict):
-        if 'artifact_dir_mappings' not in inputdict:
+        if 'artifact_target_dir_mappings' not in inputdict:
             return []
 
         expanded_mappings = []
@@ -53,7 +53,7 @@ class ArtifactTarget(Target):
             source_dir, target_dir = dir_mapping.split('=')
             if not target_dir.startswith('/'):
                 target_dir = os.path.join(self.target_directory, target_dir)
-            expanded_mappings.append("%s=%s" % (source_dir, target_dir))
+            expanded_mappings.append("%s/=%s" % (source_dir, target_dir))
 
         return expanded_mappings
 

@@ -201,17 +201,6 @@ class Target(object):
 #             path = os.path.join(self.buildFile.dir, self.build['directory'])
 #             self.build['directory'] = os.path.abspath(path)
 
-#     def flatten(self, lists):
-#         elements = []
-
-#         for l in lists:
-#             if isinstance(l, (list, tuple)):
-#                 elements.extend(self.flatten(l))
-#             else:
-#                 elements.append(l)
-
-#         return elements
-
 #     def _globs(self):
 #         previous_dir = os.getcwd()
 

@@ -10,8 +10,10 @@ cleanmeta:
 	-rm -rf ${PACKAGE_NAME}.egg-info
 
 clean: cleanmeta ## removes build-related files
+	-rm -f *.deb
 	-rm -rf dist
 	-rm -rf build
+	-find . -type f -name ".*.py" -exec rm -f "{}" \;
 	-find . -type f -name "*.orig" -exec rm -f "{}" \;
 	-find . -type f -name "*.rej" -exec rm -f "{}" \;
 	-find . -type f -name "*.pyc" -exec rm -f "{}" \;

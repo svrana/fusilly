@@ -50,6 +50,10 @@ Targets = TargetCollection()
 
 
 class Target(object):
+    # Any variable name in the list below can use templates such that users can
+    # substitute values for the templates on the command line.
+    TEMPLATE_ATTRS = []
+
     """ Base class for all targets. """
     def __init__(self, name, **kwargs):
         self.name = name
@@ -107,13 +111,14 @@ class Target(object):
             target._dep_cleanup()
             target.cleanup()
 
-    def _run(self, inputdict):
+    def _run(self, programArgs, inputdict):
         """ Internal implementation; do not override. Run the target, running
         each of its dependencies first and passes the combined output of each
         dep to the next dependency.
         """
         for depname in self.deps:
             target = Targets.get(depname)
+            target._hydrate(programArgs)
             outputdict = target._run(inputdict)
             if outputdict:
                 inputdict.update(outputdict)
@@ -121,6 +126,10 @@ class Target(object):
             if outputdict:
                 inputdict.update(outputdict)
 
+        self.hydrate(programArgs)
+        outputdict = self.run(inputdict)
+        if outputdict:
+            inputdict.update(outputdict)
         return inputdict
 
     def _make_cmdline_substitions(self, argDict, options):
@@ -148,17 +157,23 @@ class Target(object):
 
     def _templating(self, cmdline_opts):
         # allow build command to use command-line passed values too
-        if self.build:
-            self.custom_options['build'] = self.build
-        if self.artifact:
-            self.custom_options['artifact'] = self.artifact
+        # if self.build:
+        #     self.custom_options['build'] = self.build
+        # if self.artifact:
+        #     self.custom_options['artifact'] = self.artifact
+
+        for template_attr in self.TEMPLATE_ATTRS:
+            self.custom_options[self.__dict__.get(template_attr)] = self.__dict__.get(template_attr)
 
         self._make_cmdline_substitions(cmdline_opts, self.custom_options)
 
-        self.build = self.custom_options.pop('build', None)
-        self.artifact = self.custom_options.pop('artifact', None)
+        for template_attr in self.TEMPLATE_ATTRS:
+            self.custom_options[template_attr] = self.__dict__.pop(template_attr, None)
 
-    def hydrate(self, args):
+        #self.build = self.custom_options.pop('build', None)
+        #self.artifact = self.custom_options.pop('artifact', None)
+
+    def _hydrate(self, args):
         cmdline_opts = filter_dict(args.__dict__, ['subparser_name', 'args'])
         self._templating(cmdline_opts)
 

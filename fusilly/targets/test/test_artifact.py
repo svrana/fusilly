@@ -40,9 +40,9 @@ class TestArtifactTarget(unittest.TestCase):
         target = artifact_target('foo', files="**/*.py", type="deb",
                                  artifact=artifact)
         mappings = target._get_dir_mappings(
-            dict(dir_mappings=['/tmp/randomtempname=virtualenv'])
+            dict(artifact_target_dir_mappings=['/tmp/randomtempname=virtualenv'])
         )
         self.assertEqual(
             mappings,
-            ['/tmp/randomtempname=/foo/bar/baz/virtualenv']
+            ['/tmp/randomtempname/=/foo/bar/baz/virtualenv']
         )

@@ -10,6 +10,7 @@ from fusilly.exceptions import (
 from fusilly.utils import (
     filter_dict,
     to_iterable,
+    classname,
 )
 
 logger = logging.getLogger(__name__)
@@ -90,6 +91,23 @@ class Target(object):
         completed. Called in the success and failure cases. """
         pass
 
+    def _dep_check(self):
+        for depname in self.deps:
+            target = Targets.get(depname)
+            target._dep_check()
+            target.check()
+
+    def _check(self):
+        """ Internal method called to cleanup all targets. """
+        self._dep_check()
+        self.check()
+
+    def _dep_cleanup(self):
+        for depname in self.deps:
+            target = Targets.get(depname)
+            target._dep_cleanup()
+            target.cleanup()
+
     def _cleanup(self):
         """ Internal method called to cleanup all targets. """
         self._dep_cleanup()
@@ -100,12 +118,6 @@ class Target(object):
         where it was defined. This is ugly, but simple. """
         if self.buildFile is None:
             self.buildFile = buildFile
-
-    def _dep_cleanup(self):
-        for depname in self.deps:
-            target = Targets.get(depname)
-            target._dep_cleanup()
-            target.cleanup()
 
     def _run(self, programArgs, inputdict):
         """ Internal implementation; do not override. Run the target, running
@@ -118,11 +130,10 @@ class Target(object):
             outputdict = target._run(programArgs, inputdict)
             if outputdict:
                 inputdict.update(outputdict)
-            outputdict = target.run(inputdict)
-            if outputdict:
-                inputdict.update(outputdict)
 
         self._hydrate(programArgs)
+        logger.info("Running target %s:%s",
+                    classname(self).split('.')[-1], self.name)
         outputdict = self.run(inputdict)
         if outputdict:
             inputdict.update(outputdict)

@@ -123,7 +123,6 @@ def add_target_subparser(cmd, argParser):
         )
         add_dep_cmdline_opts(tp, target)
 
-
 def build_target(buildFiles, programArgs):
     argParser = argparse.ArgumentParser(description='Build project')
     add_target_subparser('build', argParser)
@@ -133,7 +132,7 @@ def build_target(buildFiles, programArgs):
     target_name = subArgs.subparser_name
     target = Targets.get(target_name)
 
-    if target.check():
+    if target._check():
         sys.exit(1)
 
     logger.info("Building %s...", target.name)

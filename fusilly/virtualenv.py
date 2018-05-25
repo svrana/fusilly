@@ -11,9 +11,9 @@ class Virtualenv(object):
         self.path = path
 
     def update_local(self):
-        """On some systems virtualenv seems to have something like a local
-        directory with symlinks.  It appears to happen on debian systems and
-        it causes havok if not updated.  So do that.
+        """On some systems virtualenv has a local directory that symlinks back
+        to itself with the full path.  Replace this relative directories so
+        links will continue working when unpacked to target directory.
 
         Credit: https://github.com/fireteam/virtualenv-tools/blob/master/virtualenv_tools.py#L125
         """
@@ -29,6 +29,8 @@ class Virtualenv(object):
                 os.symlink('../%s' % folder, filename)
 
     def update_links(self):
+        """ Unfortunate hacks around virtualenv's inability to create a relocatable
+        virtualenv. """
         self.update_local()
 
         # distutils link pointing in to fusilly virtualenv for some reason :(
@@ -42,10 +44,6 @@ class Virtualenv(object):
             os.symlink(target, distutils)
 
     def _create(self):
-        """ Virtualenv is not able to create a relocatable environment. It
-        contains symlinks that must be updated on the host. (well, you could
-        update the links but more portable to update on the target host.)
-        """
         ret = Command('virtualenv --distribute %s' % self.path).run()
         if ret != 0:
             raise VirtualenvCreationFailure()

@@ -153,14 +153,6 @@ def main():
     argParser.add_argument('command', choices=COMMANDS)
     argParser.add_argument('--logging', choices=['info', 'warn', 'debug'],
                            help='log level', default='info')
-    # skip-* options are in the wrong place. Should be added for each
-    # dep contained in a Phony target
-    # argParser.add_argument('--skip-build', action='store_true',
-    #                        help="Skip the user defined build command")
-    # argParser.add_argument('--skip-virtualenv', action='store_true',
-    #                        help="Skip virtualenv creation and bundling (dev)")
-    # argParser.add_argument('--skip-artifact', action='store_true',
-    #                        help="skip bundling (dev)")
     argParser.add_argument('args', nargs=argparse.REMAINDER)
     args = argParser.parse_args()
 

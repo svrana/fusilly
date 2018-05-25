@@ -11,7 +11,7 @@ class Virtualenv(object):
         self.path = path
 
     def _create(self):
-        cmd = 'python -m virtualenv %s' % self.path
+        cmd = 'virtualenv --distribute %s' % self.path
         ret = Command(cmd).run()
         if ret != 0:
             raise VirtualenvCreationFailure()

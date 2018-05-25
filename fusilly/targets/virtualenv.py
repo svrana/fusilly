@@ -48,7 +48,7 @@ class VirtualenvTarget(Target):
     def cleanup(self):
         if self.tempdir:
             logger.debug("removing temporary directory %s", self.tempdir)
-            shutil.rmtree(self.tempdir)
+            #shutil.rmtree(self.tempdir)
 
 
 def virtualenv_target(name, **kwargs):

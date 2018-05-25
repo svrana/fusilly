@@ -100,6 +100,14 @@ def artifact_target(name, **kwargs):
         raise BuildConfigError(
             "artifact_target %s must contain a 'files' key" % name
         )
+    files = kwargs.pop('files', None)
+    files = flatten(to_iterable(files))
+
+    if 'exclude_files' in kwargs:
+        exclude_files = flatten(to_iterable(kwargs.pop('exclude_files')))
+    else:
+        exclude_files = []
+
     if 'artifact' not in kwargs:
         raise BuildConfigError(
             "artifact_target %s must contain an 'artifact' dictionary" % name
@@ -146,9 +154,10 @@ def artifact_target(name, **kwargs):
 
     return ArtifactTarget.create(
         name,
-        kwargs.pop('files'),
+        files,
         artifact_type=artifact['type'],
         target_directory=artifact['target_directory'],
         fpm_options=artifact['fpm_options'],
+        exclude_files=exclude_files,
         **kwargs
     )

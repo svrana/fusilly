@@ -1,7 +1,7 @@
 virtualenv_target(
     name='virtualenv',
     requirements='requirements-base.txt',
-    target_directory_name='virtualenv',
+    target_directory='virtualenv',
 )
 
 artifact_target(

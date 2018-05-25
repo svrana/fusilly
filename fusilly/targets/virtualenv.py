@@ -32,7 +32,7 @@ class VirtualenvTarget(Target):
         )
         logging.info("virtualenv creation complete")
 
-        dirmap = "%s=%s" % (self.tempdir, self.target_directory_name)
+        dirmap = "%s=%s" % (self.tempdir, self.target_directory)
         return dict(artifact_target_dir_mappings=dirmap)
 
     @classmethod
@@ -40,7 +40,7 @@ class VirtualenvTarget(Target):
         target = VirtualenvTarget(name, **kwargs)
         # pylint: disable=W0201
         target.requirements = requirements
-        target.target_directory_name = target_directory
+        target.target_directory = target_directory
         target.tempdir = None
 
         return target
@@ -54,16 +54,17 @@ class VirtualenvTarget(Target):
 def virtualenv_target(name, **kwargs):
     if 'requirements' not in kwargs:
         raise BuildConfigError(
-            "virtualenv_target must contain a 'requirements' key"
+            "virtualenv_target %s must contain a 'requirements' key" % name
         )
-    if 'target_directory_name' not in kwargs:
+    if 'target_directory' not in kwargs:
         raise BuildConfigError(
-            "virtualenv_target must contain a 'target_directory_name' key"
+            "virtualenv_target %s must contain a 'target_directory' key" %
+            name
         )
 
     return VirtualenvTarget.create(
         name,
         kwargs.pop('requirements'),
-        kwargs.pop('target_directory_name'),
+        kwargs.pop('target_directory'),
         **kwargs
     )

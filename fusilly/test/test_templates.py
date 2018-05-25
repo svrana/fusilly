@@ -4,17 +4,43 @@ import json
 import unittest
 
 from fusilly.exceptions import MissingTemplateValue
-from fusilly.targets import Target
+from fusilly.targets import Target, Targets
+
+
+class TargetTest(Target):
+    TEMPLATE_ATTRS = ['command']
+
+    def run(self, inputdict):
+        return None
+
+    @classmethod
+    def create(cls, name, **kwargs):
+        command = kwargs.pop('command', None)
+        maintainer = kwargs.pop('maintainer', None)
+        build_opts = kwargs.pop('build_opts', None)
+
+        target = TargetTest(name, **kwargs)
+        # pylint: disable=W0201
+        target.maintainer = maintainer
+        target.build_opts = build_opts
+        target.command = command
+
+        return target
 
 
 class TestTemplating(unittest.TestCase):
     def setUp(self):
-        self.test_target = Target.from_dict(dict(
-            func='foo',
-            name='test',
-            files='**/*.py',
-            artifact=dict(name="foo", type="deb"),
-        ))
+        if 'test' in Targets:
+            self.test_target = Targets.get('test')
+        else:
+            self.test_target = TargetTest.create(
+                name='test',
+                command='npm run build --maintainer={{maintainer}} --build_opts={{build_opts}}',
+                maintainer='nobody@wish.com',
+                build_opts='none',
+                sha='12345',
+                env='dev'
+            )
 
     def test_cmdline_substition(self):
         build_spec = dict(build="npm build --env={{env}}", foo="nothing here")
@@ -45,7 +71,7 @@ class TestTemplating(unittest.TestCase):
         )
 
     def test_json_bug(self):
-        cmd="npm run prod --"
+        cmd = "npm run prod --"
         cmd_opts = json.dumps({
             'host': '{{static_file_host}}',
             'hash': '12332',
@@ -68,4 +94,12 @@ class TestTemplating(unittest.TestCase):
         self.assertEqual(
             build_spec,
             {'build': {'command': "npm build --env=production --sha=1234"}}
+        )
+
+    def test_attr_templating(self):
+        args = {'maintainer': 'shaw@wish.com', 'build_opts': 'foobar'}
+        self.test_target._templating(args)
+        self.assertEqual(
+            self.test_target.command,
+            'npm run build --maintainer=shaw@wish.com --build_opts=foobar',
         )

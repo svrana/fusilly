@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class Command(Target):
-    def run(self, inputDict):
+    TEMPLATE_ATTRS = ['command']
+
+    def run(self, _):
         ret = Cmd(self.command, self.directory).run()
         if ret != 0:
             raise CommandTargetRunFailure()

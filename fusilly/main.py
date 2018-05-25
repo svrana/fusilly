@@ -139,9 +139,7 @@ def build_target(buildFiles, programArgs):
     logger.info("Building %s...", target.name)
 
     try:
-        #target.hydrate(subArgs)
-        output_dict = target._run({})
-        target.run(output_dict)
+        target._run(subArgs, {})
     finally:
         target._cleanup()
 

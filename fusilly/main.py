@@ -101,6 +101,18 @@ class BuildFiles(object):
             Targets.maybe_set_buildfile(buildFile)
 
 
+def add_dep_cmdline_opts(parser, target):
+    for dep in target.deps:
+        dep_target = Targets.get(dep)
+        add_dep_cmdline_opts(parser, dep_target)
+
+    for optname, default_value in target.custom_options.iteritems():
+        option = '--%s' % optname
+        # non-empty help to get the ArgumentDefaultsHelpFormatter to show
+        # the defaults
+        parser.add_argument(option, type=str, default=default_value, help=' ')
+
+
 def add_target_subparser(cmd, argParser):
     subparsers = argParser.add_subparsers(dest='subparser_name',
                                           help='Project to build')
@@ -109,11 +121,7 @@ def add_target_subparser(cmd, argParser):
             target.name, help='%s %s' % (cmd, target.name),
             formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
-        for optname, default_value in target.custom_options.iteritems():
-            option = '--%s' % optname
-            # non-empty help to get the ArgumentDefaultsHelpFormatter to show
-            # the defaults
-            tp.add_argument(option, type=str, default=default_value, help=' ')
+        add_dep_cmdline_opts(tp, target)
 
 
 def build_target(buildFiles, programArgs):
@@ -131,6 +139,7 @@ def build_target(buildFiles, programArgs):
     logger.info("Building %s...", target.name)
 
     try:
+        #target.hydrate(subArgs)
         output_dict = target._do_deps({})
         target.run(output_dict)
     finally:

@@ -119,6 +119,45 @@ class Target(object):
             target._dep_cleanup()
             target.cleanup()
 
+    def _make_cmdline_substitions(self, argDict, options):
+        pattern = re.compile(r'{{(\w+)}}')
+
+        for key, _ in options.iteritems():
+            while True:
+                value = options[key]
+                if isinstance(value, dict):
+                    self._make_cmdline_substitions(argDict, value)
+                    break
+
+                value = str(options[key])
+                match = pattern.search(value)
+                if not match:
+                    break
+
+                replace_value = argDict.get(match.group(1))
+                if replace_value is None:
+                    err = "Found '{{%s}}' without a definition" % match.group(1)
+                    raise MissingTemplateValue(err)
+
+                start, end = match.span()
+                options[key] = value[0:start] + str(replace_value) + value[end:]
+
+    def _templating(self, cmdline_opts):
+        # allow build command to use command-line passed values too
+        if self.build:
+            self.custom_options['build'] = self.build
+        if self.artifact:
+            self.custom_options['artifact'] = self.artifact
+
+        self._make_cmdline_substitions(cmdline_opts, self.custom_options)
+
+        self.build = self.custom_options.pop('build', None)
+        self.artifact = self.custom_options.pop('artifact', None)
+
+    def hydrate(self, args):
+        cmdline_opts = filter_dict(args.__dict__, ['subparser_name', 'args'])
+        self._templating(cmdline_opts)
+
 # class Target(object):
 #     def __init__(self, name, func, files, artifact, **kwargs):
 #         self.name = name

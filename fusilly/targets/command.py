@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fusilly.command import Command as Cmd
 from fusilly.exceptions import BuildConfigError, CommandTargetRunFailure
@@ -12,7 +13,11 @@ class Command(Target):
     TEMPLATE_ATTRS = ['command']
 
     def run(self, _):
-        ret = Cmd(self.command, self.directory).run()
+        directory = self.directory
+        if directory and not directory.startswith('/'):
+            directory = os.path.join(self.buildFile.dir, self.directory)
+
+        ret = Cmd(self.command, directory).run()
         if ret != 0:
             raise CommandTargetRunFailure()
         return None

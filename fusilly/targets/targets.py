@@ -75,9 +75,11 @@ class Target(object):
         for depname in self.deps:
             target = Targets.get(depname)
             outputdict = target._do_deps(inputdict)
-            inputdict.update(outputdict)
+            if outputdict:
+                inputdict.update(outputdict)
             outputdict = target.run(inputdict)
-            inputdict.update(outputdict)
+            if outputdict:
+                inputdict.update(outputdict)
 
         return inputdict
 

@@ -6,12 +6,14 @@ virtualenv_target(
 
 artifact_target(
     name='artifact',
+
     files=[
         '**/*.py',
     ],
     exclude_files=[
         '**/test/**',
     ],
+
     artifact={
         'name': 'fusilly',
         'type': 'deb',

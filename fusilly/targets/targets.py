@@ -63,6 +63,8 @@ class Target(object):
         deps = kwargs.pop('deps', None)
         self.deps = to_iterable(deps)
 
+        # legacy_name is unused internally, it is used to document the target
+        self.legacy_name = kwargs.pop('legacy_name', None)
         self.custom_options = kwargs
 
         Targets.add(self)

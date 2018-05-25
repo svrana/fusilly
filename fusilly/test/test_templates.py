@@ -23,6 +23,7 @@ class TargetTest(Target):
         # pylint: disable=W0201
         target.maintainer = maintainer
         target.build_opts = build_opts
+        target.command = command
 
         return target
 
@@ -34,7 +35,7 @@ class TestTemplating(unittest.TestCase):
         else:
             self.test_target = TargetTest.create(
                 name='test',
-                command='npm run build --maintainer={maintainer} --build_opts={build_opts}',
+                command='npm run build --maintainer={{maintainer}} --build_opts={{build_opts}}',
                 maintainer='nobody@wish.com',
                 build_opts='none',
                 sha='12345',
@@ -97,8 +98,8 @@ class TestTemplating(unittest.TestCase):
 
     def test_attr_templating(self):
         args = {'maintainer': 'shaw@wish.com', 'build_opts': 'foobar'}
-        self.test_target._templating(args, build_spec)
+        self.test_target._templating(args)
         self.assertEqual(
-            build_spec,
-            {'build': {'command': "npm build --env=production --sha=1234"}}
+            self.test_target.command,
+            'npm run build --maintainer=shaw@wish.com --build_opts=foobar',
         )

@@ -140,7 +140,7 @@ def build_target(buildFiles, programArgs):
 
     try:
         #target.hydrate(subArgs)
-        output_dict = target._do_deps({})
+        output_dict = target._run({})
         target.run(output_dict)
     finally:
         target._cleanup()

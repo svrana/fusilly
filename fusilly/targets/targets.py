@@ -73,18 +73,6 @@ class Target(object):
     def run(self, inputdict):
         pass
 
-    def _do_deps(self, inputdict):
-        for depname in self.deps:
-            target = Targets.get(depname)
-            outputdict = target._do_deps(inputdict)
-            if outputdict:
-                inputdict.update(outputdict)
-            outputdict = target.run(inputdict)
-            if outputdict:
-                inputdict.update(outputdict)
-
-        return inputdict
-
     @classmethod
     def create(cls, *args, **kwargs):
         # I like to use this to construct each Target to split up validation
@@ -118,6 +106,22 @@ class Target(object):
             target = Targets.get(depname)
             target._dep_cleanup()
             target.cleanup()
+
+    def _run(self, inputdict):
+        """ Internal implementation; do not override. Run the target, running
+        each of its dependencies first and passes the combined output of each
+        dep to the next dependency.
+        """
+        for depname in self.deps:
+            target = Targets.get(depname)
+            outputdict = target._run(inputdict)
+            if outputdict:
+                inputdict.update(outputdict)
+            outputdict = target.run(inputdict)
+            if outputdict:
+                inputdict.update(outputdict)
+
+        return inputdict
 
     def _make_cmdline_substitions(self, argDict, options):
         pattern = re.compile(r'{{(\w+)}}')

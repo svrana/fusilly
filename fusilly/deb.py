@@ -1,8 +1,8 @@
 import logging
 import os
-import subprocess
 from tempfile import NamedTemporaryFile
 
+from fusilly.command import Command
 from fusilly.exceptions import DebCreationFailure
 
 
@@ -62,9 +62,7 @@ class Deb(object):
             if dir_mappings:
                 cmd += ' %s' % ' '.join(dir_mappings)
 
-            cmd_array = cmd.split(' ')
-            logger.info("Running: %s", cmd)
-            ret = subprocess.call(cmd_array)
+            ret = Command(cmd).run()
             if ret:
                 raise DebCreationFailure()
             return deb

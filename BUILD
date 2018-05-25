@@ -1,11 +1,11 @@
 virtualenv_target(
-    name='fusilly_virtualenv',
+    name='virtualenv',
     requirements='requirements-base.txt',
     target_directory_name='virtualenv',
 )
 
 artifact_target(
-    name='fusilly',
+    name='artifact',
     files=[
         '**/*.py',
     ],
@@ -24,6 +24,19 @@ artifact_target(
     },
 
     deps=[
-        'fusilly_virtualenv',
+        'virtualenv',
+    ]
+)
+
+command_target(
+    name='build_prep',
+    command='make clean'
+)
+
+phony_target(
+    name='fusilly',
+    deps = [
+        'build_prep',
+        'artifact',
     ]
 )

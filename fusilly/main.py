@@ -8,13 +8,16 @@ import os.path
 import sys
 
 # pylint: disable=W0611
-from fusilly.targets import ( # noqa
-    Targets,
-    python_artifact,
-    virtualenv_target,
-    artifact_target
-)
-
+# from fusilly.targets import ( # noqa
+#     Targets,
+#     python_artifact,
+#     virtualenv_target,
+#     artifact_target,
+#     command_target,
+#     phony_target,
+# )
+from fusilly.targets import Targets
+from fusilly.targets import *   # noqa
 
 stream_handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')

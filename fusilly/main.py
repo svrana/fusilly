@@ -115,7 +115,7 @@ def add_dep_cmdline_opts(parser, target):
 
 def add_target_subparser(cmd, argParser):
     subparsers = argParser.add_subparsers(dest='subparser_name',
-                                          help='Project to build')
+                                          help='Target to run')
     for target in Targets.itervalues():
         tp = subparsers.add_parser(
             target.name, help='%s %s' % (cmd, target.name),
@@ -123,9 +123,9 @@ def add_target_subparser(cmd, argParser):
         )
         add_dep_cmdline_opts(tp, target)
 
-def build_target(buildFiles, programArgs):
+def run_target(buildFiles, programArgs):
     argParser = argparse.ArgumentParser(description='Build project')
-    add_target_subparser('build', argParser)
+    add_target_subparser('run', argParser)
 
     argParser.add_argument('args', nargs=argparse.REMAINDER)
     subArgs = argParser.parse_args(programArgs.args)
@@ -145,7 +145,7 @@ def build_target(buildFiles, programArgs):
 
 def main():
     COMMANDS = {
-        'build': build_target,
+        'run': run_target,
     }
 
     argParser = argparse.ArgumentParser(description='Build and bundle')

@@ -4,6 +4,8 @@ import os
 from importlib import import_module
 import sys
 
+# This is hear so that additional targets need not import them manually.
+# But it's pretty silly
 cdir = os.path.abspath(os.path.dirname(__file__))
 
 IGNORE_LIST = [

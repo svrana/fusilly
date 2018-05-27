@@ -91,6 +91,12 @@ class Target(object):
         completed. Called in the success and failure cases. """
         pass
 
+    def _classname_short(self):
+        return classname(self).split('.')[-1]
+
+    def _target_name_for_display(self):
+        return "%s:%s" % (self._classname_short(), self.name)
+
     def _dep_check(self):
         for depname in self.deps:
             target = Targets.get(depname)
@@ -132,8 +138,7 @@ class Target(object):
                 inputdict.update(outputdict)
 
         self._hydrate(programArgs)
-        logger.info("Running target %s:%s",
-                    classname(self).split('.')[-1], self.name)
+        logger.info("Running %s target", self._target_name_for_display())
         outputdict = self.run(inputdict)
         if outputdict:
             inputdict.update(outputdict)

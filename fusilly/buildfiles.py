@@ -4,6 +4,7 @@ import logging
 import sys
 
 from fusilly.targets import Targets
+# Import all the targets so that the build files can find them when exec'd
 from fusilly.targets import *   # noqa
 
 
@@ -19,8 +20,8 @@ class BuildFile(object):
 
     def source(self):
         if self._source is None:
-            with open(self.path, 'r') as f:
-                self._source = f.read()
+            with open(self.path, 'r') as buildfile:
+                self._source = buildfile.read()
         return self._source
 
 

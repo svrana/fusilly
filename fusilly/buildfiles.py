@@ -7,7 +7,6 @@ from fusilly.config import get_fusilly_config
 from fusilly.targets import Targets
 # Import all the targets so that the build files can find them when exec'd
 from fusilly.targets import *   # noqa
-from fusilly.utils import to_iterable
 
 
 logger = logging.getLogger(__name__)
@@ -36,12 +35,7 @@ class BuildFiles(object):
 
     def find_build_files_in(self, directory):
         builds = []
-        config = get_fusilly_config()
-        if config:
-            build_files = config.get('build_files', {})
-            ignore_paths = to_iterable(build_files.get('ignore_paths'))
-        else:
-            ignore_paths = []
+        ignore_paths = get_fusilly_config().ignore_paths()
 
         for root, dirs, files in os.walk(directory, topdown=True):
             # skip over hidden directories...
@@ -57,23 +51,8 @@ class BuildFiles(object):
                 builds.append(buildFile)
         return builds
 
-    def find_project_root(self):
-        # Meh, could insist on PYTHONPATH though that would mean would only
-        # work in dev settings, so looking around for repo root.
-        dirs = ['.git']
-
-        cwd = os.getcwd()
-        while cwd != '/':
-            roots = [os.path.join(cwd, d) for d in dirs]
-            for root in roots:
-                if os.path.exists(root):
-                    return os.path.dirname(root)
-            cwd = os.path.abspath(os.path.join(cwd, '..'))
-
-        return None
-
     def find_build_files(self):
-        self.project_root = self.find_project_root()
+        self.project_root = get_fusilly_config().project_root
         if self.project_root is None:
             logger.error("Could not find project root. Check directory.")
             sys.exit(1)

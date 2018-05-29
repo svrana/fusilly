@@ -29,5 +29,10 @@ class UserSuppliedBuildCmdFailure(BuildError):
 class MissingTemplateValue(BuildError):
     pass
 
+
 class CommandTargetRunFailure(BuildError):
+    pass
+
+
+class FusillyConfigError(FusillyBaseException):
     pass

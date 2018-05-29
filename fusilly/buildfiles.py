@@ -3,9 +3,11 @@ import json     # noqa
 import logging
 import sys
 
+from fusilly.config import get_fusilly_config
 from fusilly.targets import Targets
 # Import all the targets so that the build files can find them when exec'd
 from fusilly.targets import *   # noqa
+from fusilly.utils import to_iterable
 
 
 logger = logging.getLogger(__name__)
@@ -34,14 +36,19 @@ class BuildFiles(object):
 
     def find_build_files_in(self, directory):
         builds = []
-        # TODO: global config file, living at root to control things like this
-        third_party_dirs = ['vendor', 'node_modules']
+        config = get_fusilly_config()
+        if config:
+            build_files = config.get('build_files', {})
+            ignore_paths = to_iterable(build_files.get('ignore_paths'))
+        else:
+            ignore_paths = []
+
         for root, dirs, files in os.walk(directory, topdown=True):
             # skip over hidden directories...
             # skip over the case where go has brought in deps that contain
             # their own BUILD files.
             dirs[:] = [d for d in dirs if not d[0] == '.' or
-                       d in third_party_dirs]
+                       d in ignore_paths]
             logger.debug("Checking %s for build files", root)
             if 'BUILD' in files:
                 buildFilePath = os.path.join(root, 'BUILD')

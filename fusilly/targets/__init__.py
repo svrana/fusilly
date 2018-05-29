@@ -25,3 +25,9 @@ for module_name in modules:
     target_func = getattr(module, func_name)
     if target_func:
         setattr(sys.modules['fusilly.targets'], func_name, target_func)
+
+#plugin_dir = os.path.join(cdir, '..', '..', 'test')
+#module = import_module("test.virtualenv")
+#target_func = getattr(module, 'virtualenv_target')
+#setattr(sys.modules['fusilly.targets'], 'virtualenv_target', target_func)
+##import pdb ; pdb.set_trace()

@@ -23,4 +23,5 @@ for module_name in modules:
     func_name = "%s_target" % module_name
     module = import_module('.%s' % module_name, 'fusilly.targets')
     target_func = getattr(module, func_name)
-    setattr(sys.modules['fusilly.targets'], func_name, target_func)
+    if target_func:
+        setattr(sys.modules['fusilly.targets'], func_name, target_func)

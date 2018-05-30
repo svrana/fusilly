@@ -52,6 +52,9 @@ def find_project_root():
 
     cwd = os.getcwd()
     while cwd != '/':
+        # config file can also indicate project root
+        if os.path.isfile(os.path.join(cwd, '.fusilly.toml')):
+            return cwd
         roots = [os.path.join(cwd, d) for d in dirs]
         for root in roots:
             if os.path.exists(root):

@@ -24,6 +24,11 @@ class Config(object):
             )
 
         plugin_path = os.path.join(self.project_root, directory)
+        if not os.path.isdir(plugin_path):
+            raise FusillyConfigError(
+                'fusilly target directory %s not exist or is not a directory' %
+                directory
+            )
         return plugin_path
 
     def target_import_format(self, module_name):

@@ -34,7 +34,7 @@ publish: ## Publish to pypi.i.wish.com
 	python setup.py sdist upload -r http://pypi.i.wish.com
 
 test: ## Run unit tests
-	py.test
+	py.test --verbose
 
 shell: ## Run ipython shell
 	@ipython -c 'from ${PACKAGE_NAME} import *' -i

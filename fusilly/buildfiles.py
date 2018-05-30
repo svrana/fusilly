@@ -73,8 +73,7 @@ class BuildFiles(object):
 
             # We don't know which targets were just loaded, but we need each
             # one to know which buildFile its associated with.
-            # TODO: should be able to pass this in the environment during exec
-            # and grab it from there.
+            # This is so hacky..
             Targets.maybe_set_buildfile(buildFile)
 
         if not Targets:

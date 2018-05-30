@@ -12,8 +12,9 @@ Bazel or Pants was not immediately feasible.
 
 ## Build Files
 
-BUILD files are python files that that define the targets used to build
-our project. At start-up, Fusilly will find these BUILD files and the
+BUILD files are python files that define the targets used to build
+your project or do whatever it is you are trying to accomplish.
+At start-up, Fusilly will find these BUILD files and the
 targets become runnable from the command-line.
 
 Let's take the fusilly BUILD located [here](https://github.com/svrana/fusilly/blob/master/BUILD)

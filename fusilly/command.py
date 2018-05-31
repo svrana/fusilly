@@ -10,7 +10,20 @@ class Command(object):
         self.command = command
         self.directory = directory
 
-    def run(self):
+    def _run_inherit_stdout(self, cmd):
+        ret = subprocess.call(cmd)
+        return ret
+
+    def _run_capture_stdout(self, cmd):
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, _ = process.communicate()
+        return process.returncode, stdout
+
+    def run(self, capture_stdout=False):
         if self.directory:
             last_directory = os.getcwd()
             os.chdir(self.directory)
@@ -18,10 +31,19 @@ class Command(object):
             last_directory = None
 
         logger.info("Running command: %s", self.command)
+
         cmd = self.command.split(' ')
-        ret = subprocess.call(cmd)
+        if capture_stdout:
+            ret, stdout = self._run_capture_stdout(cmd)
+        else:
+            ret = self._run_inherit_stdout(cmd)
 
         if last_directory:
             os.chdir(last_directory)
 
-        return ret
+        if not capture_stdout:
+            return ret
+
+        return ret, stdout
+
+

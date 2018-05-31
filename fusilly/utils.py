@@ -39,5 +39,6 @@ def flatten(lists):
 
     return elements
 
+
 def classname(klass):
     return klass.__module__ + "." + klass.__class__.__name__

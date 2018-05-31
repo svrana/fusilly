@@ -37,7 +37,7 @@ command_target(
 
 phony_target(
     name='fusilly',
-    deps = [
+    deps=[
         'build_prep',
         'artifact',
     ]

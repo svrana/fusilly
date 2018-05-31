@@ -2,6 +2,7 @@ import os
 import toml
 
 from fusilly.exceptions import FusillyConfigError
+from fusilly.repo import GitRepo
 from fusilly.utils import to_iterable
 
 
@@ -12,6 +13,7 @@ class Config(object):
     def __init__(self, project_root, toml_config=None):
         self.project_root = project_root
         self.config = toml_config or {}
+        self.repo = GitRepo(project_root)
 
     def custom_target_path(self):
         custom_targets = self.config.get('custom_targets', {})
@@ -45,6 +47,13 @@ class Config(object):
         build_files = self.config.get('build_files', {})
         ignore_paths = build_files.get('ignore_paths')
         return to_iterable(ignore_paths)
+
+    def repo_head_sha(self):
+        """ Return the sha of the local HEAD. """
+        return self.repo.head_sha()
+
+    def repo_head_sha_short(self):
+        return self.repo.head_sha_short()
 
 
 def find_project_root():

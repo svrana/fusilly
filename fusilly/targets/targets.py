@@ -3,9 +3,11 @@ import collections
 import logging
 import re
 
+from fusilly.config import get_fusilly_config
 from fusilly.exceptions import (
+    BuildConfigError,
     DuplicateTargetError,
-    MissingTemplateValue
+    MissingTemplateValue,
 )
 from fusilly.utils import (
     filter_dict,
@@ -14,6 +16,12 @@ from fusilly.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+BUILTIN_TEMPLATE_OPTS = [
+    'sha',
+    'sha_short',
+]
 
 
 class TargetCollection(collections.Mapping):
@@ -66,6 +74,11 @@ class Target(object):
 
         # legacy_name is unused internally, it is used to document the target
         self.legacy_name = kwargs.pop('legacy_name', None)
+
+        for builtin in BUILTIN_TEMPLATE_OPTS:
+            if builtin in kwargs:
+                raise BuildConfigError("`%s` is a reserved parameter.")
+
         self.custom_options = kwargs
 
         Targets.add(self)
@@ -81,9 +94,7 @@ class Target(object):
         pass
 
     def check(self):
-        """ Optional override called prior to hydrate and run()
-        Return 0 if target evaluation should continue otherwise program exits.
-        """
+        """ Optional override called prior to hydrate and run() Return 0 if target evaluation should continue otherwise program exits.  """
         return 0
 
     def cleanup(self):
@@ -180,6 +191,15 @@ class Target(object):
         for template_attr in self.TEMPLATE_ATTRS:
             self.__dict__[template_attr] = self.custom_options.pop(template_attr)
 
+    def add_builtin_options(self, options):
+        """ For those options most projects will want. """
+        config = get_fusilly_config()
+        options['sha'] = config.repo_head_sha()
+        options['sha_short'] = config.repo_head_sha_short()
+
     def _hydrate(self, args):
         cmdline_opts = filter_dict(args.__dict__, ['subparser_name', 'args'])
+
+        self.add_builtin_options(cmdline_opts)
+
         self._templating(cmdline_opts)

@@ -4,6 +4,8 @@ import subprocess
 
 logger = logging.getLogger(__name__)
 
+PROCESSES = []
+
 
 class Command(object):
     def __init__(self, command, directory=None):
@@ -11,8 +13,15 @@ class Command(object):
         self.directory = directory
 
     def _run_inherit_stdout(self, cmd):
-        ret = subprocess.call(cmd)
-        return ret
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        PROCESSES.append(process)
+        stdout, _ = process.communicate()
+        PROCESSES.remove(process)
+        return process.returncode
 
     def _run_capture_stdout(self, cmd):
         process = subprocess.Popen(
@@ -20,7 +29,9 @@ class Command(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
+        PROCESSES.append(process)
         stdout, _ = process.communicate()
+        PROCESSES.remove(process)
         return process.returncode, stdout
 
     def run(self, capture_stdout=False):
@@ -45,3 +56,8 @@ class Command(object):
             return ret
 
         return ret, stdout
+
+    @classmethod
+    def sigterm_handler(cls):
+        for process in PROCESSES:
+            process.terminate()

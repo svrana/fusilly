@@ -2,8 +2,10 @@
 
 import argparse
 import logging
+import signal
 import sys
 
+from fusilly.command import Command
 from fusilly.buildfiles import BuildFiles
 # pylint: disable=W0611
 from fusilly.targets import Targets
@@ -60,7 +62,16 @@ def run_target(programArgs):
         target._cleanup()
 
 
+def signal_handler(sig, frame):
+    Command.sigterm_handler()
+    logger.info('exiting..')
+    sys.exit(1)
+
+
 def main():
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
     COMMANDS = {
         'run': run_target,
     }

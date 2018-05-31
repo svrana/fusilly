@@ -44,7 +44,7 @@ artifact_target(
         'fpm_options': {
             'deb-user': 'nobody',
             'deb-group': 'nogroup',
-            'maintainer': 'shaw@wish.com',
+            'maintainer': 'shaw@vranix.com',
         }
     },
 
@@ -105,7 +105,7 @@ target that is not reserved for that target.
   )
 ```
 
-This would allow you to run build --env=production by running `fusilly run
+This would allow you to run `build --env=production` by running `fusilly run
 build --env=production` on the command line. The default value for env would be
 'stage'.
 

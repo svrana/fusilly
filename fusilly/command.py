@@ -45,5 +45,3 @@ class Command(object):
             return ret
 
         return ret, stdout
-
-

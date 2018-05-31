@@ -38,7 +38,7 @@ class TestTemplating(unittest.TestCase):
                 command='npm run build --maintainer={{maintainer}} --build_opts={{build_opts}}',
                 maintainer='nobody@wish.com',
                 build_opts='none',
-                sha='12345',
+                sha1='12345',
                 env='dev'
             )
 
@@ -52,16 +52,16 @@ class TestTemplating(unittest.TestCase):
         )
 
     def test_cmdline_multi_substitution(self):
-        build_spec = dict(build="npm build --env={{env}} --sha={{sha}}")
-        args = {'env': 'production', 'sha': '1234'}
+        build_spec = dict(build="npm build --env={{env}} --sha1={{sha1}}")
+        args = {'env': 'production', 'sha1': '1234'}
         self.test_target._make_cmdline_substitions(args, build_spec)
         self.assertEqual(
             build_spec,
-            dict(build="npm build --env=production --sha=1234")
+            dict(build="npm build --env=production --sha1=1234")
         )
 
     def test_missing_option_raises(self):
-        build_spec = dict(build="npm build --env={{env}} --sha={{sha}}")
+        build_spec = dict(build="npm build --env={{env}} --sha1={{sha1}}")
         args = {'env': 'production'}
         self.assertRaises(
             MissingTemplateValue,
@@ -88,12 +88,12 @@ class TestTemplating(unittest.TestCase):
         )
 
     def test_dict_of_dicts(self):
-        build_spec = {'build': {'command': "npm build --env={{env}} --sha={{sha}}"}}
-        args = {'env': 'production', 'sha': '1234'}
+        build_spec = {'build': {'command': "npm build --env={{env}} --sha1={{sha1}}"}}
+        args = {'env': 'production', 'sha1': '1234'}
         self.test_target._make_cmdline_substitions(args, build_spec)
         self.assertEqual(
             build_spec,
-            {'build': {'command': "npm build --env=production --sha=1234"}}
+            {'build': {'command': "npm build --env=production --sha1=1234"}}
         )
 
     def test_attr_templating(self):

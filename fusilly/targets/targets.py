@@ -77,7 +77,7 @@ class Target(object):
 
         for builtin in BUILTIN_TEMPLATE_OPTS:
             if builtin in kwargs:
-                raise BuildConfigError("`%s` is a reserved parameter.")
+                raise BuildConfigError("`%s` is a reserved parameter." % builtin)
 
         self.custom_options = kwargs
 

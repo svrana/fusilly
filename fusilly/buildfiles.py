@@ -11,6 +11,8 @@ from fusilly.targets import *   # noqa
 
 logger = logging.getLogger(__name__)
 
+FusillyBuildFile = 'BUILD.fs'
+
 
 class BuildFile(object):
     def __init__(self, project_root, path):
@@ -44,8 +46,8 @@ class BuildFiles(object):
             dirs[:] = [d for d in dirs if not d[0] == '.' or
                        d in ignore_paths]
             logger.debug("Checking %s for build files", root)
-            if 'BUILD' in files:
-                buildFilePath = os.path.join(root, 'BUILD')
+            if FusillyBuildFile in files:
+                buildFilePath = os.path.join(root, FusillyBuildFile)
                 buildFile = BuildFile(self.project_root, buildFilePath)
                 logger.debug("Found %s", buildFilePath)
                 builds.append(buildFile)

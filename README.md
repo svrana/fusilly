@@ -2,7 +2,7 @@
 
 Fusilly is a task runner written in Python built to support the build
 steps of python programs written in a 'messy monorepo', where a move to
-Bazel or Pants was not immediately feasible.
+Bazel or Pants is not immediately feasible.
 
 ## Goals
 
@@ -12,12 +12,12 @@ Bazel or Pants was not immediately feasible.
 
 ## Build Files
 
-BUILD files are python files that define the targets used to build
+BUILD.fs files are python files that define the targets used to build
 your project or do whatever it is you are trying to accomplish.
-At start-up, Fusilly will find these BUILD files and the
+At startup, Fusilly will find these BUILD.fs files and the
 targets become runnable from the command-line.
 
-Let's take the fusilly BUILD located [here](https://github.com/svrana/fusilly/blob/master/BUILD)
+Let's take the fusilly BUILD.fs located [here](https://github.com/svrana/fusilly/blob/master/BUILD.fs)
 as an example:
 
 ```python
@@ -67,7 +67,7 @@ phony_target(
 )
 ```
 
-This BUILD file defines four targets. Each target requires a name so that it
+This BUILD.fs file defines four targets. Each target requires a name so that it
 can be be referred to by other targets and run on the command line with the
 'fusilly run' command.
 
@@ -112,7 +112,7 @@ build --env=production` on the command line. The default value for env would be
 
 ## Targets
 
-Common Paramters | description
+Common Parameters | Description
 -----------------|----------------
 name | the name of the target. Used by other targets to invoke this target or by the user to run the target from the command line
 deps | list of target names to run prior to running this target
@@ -142,7 +142,7 @@ Invoked with command_target function.
 Parameters | Description
 -----------|--------
 command    | the command to run, i.e., make clean
-directory  | the directory in which to run the command. If not specified, defaults to the same file as the BUILD file where the target is defined. Relative paths OK.
+directory  | the directory in which to run the command. If not specified, defaults to the same file as the BUILD.fs file where the target is defined. Relative paths OK.
 
 ### Phony
 
@@ -184,7 +184,7 @@ the project root named .fusilly.toml. This is an optional file.
 
 ```toml
 [build_files]
-# directory elements in your project that should be scanned for BUILD files.
+# directory elements in your project that should be scanned for BUILD.fs files.
 ignore_paths=['node_modules', 'vendor']
 
 [custom_targets]
@@ -195,7 +195,7 @@ directory='build'
 
 ### Other
 
-In a monorepo there may be many BUILD files. To locate them all, fusilly will
+In a monorepo there may be many BUILD.fs files. To locate them all, fusilly will
 look through your project for each one. Fusilly must first locate your project
 root. It will scan up the directory tree for a .git directory or the existence
 of a .fusilly.toml file. If you do not use git, place an empty .fusilly.toml file

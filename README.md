@@ -45,6 +45,7 @@ artifact_target(
             'deb-user': 'nobody',
             'deb-group': 'nogroup',
             'maintainer': 'shaw@vranix.com',
+            'version': '{{sha_short}}',
         }
     },
 

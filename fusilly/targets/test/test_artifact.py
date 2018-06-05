@@ -33,6 +33,7 @@ class TestArtifactTarget(unittest.TestCase):
 
     def test_dir_mapping_subs(self):
         artifact = dict(
+            name='foo',
             type='deb',
             target_directory='/foo/bar/baz',
             fpm_options=self.opts,

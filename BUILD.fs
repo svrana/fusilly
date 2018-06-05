@@ -22,6 +22,7 @@ artifact_target(
             'deb-user': 'nobody',
             'deb-group': 'nogroup',
             'maintainer': 'shaw@wish.com',
+            'version': '{{sha_short}}',
         }
     },
 

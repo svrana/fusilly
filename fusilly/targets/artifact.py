@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class ArtifactTarget(Target):
+    TEMPLATE_ATTRS = ['artifact_name', 'fpm_options']
+
     def _globs(self):
         previous_dir = os.getcwd()
 
@@ -72,7 +74,7 @@ class ArtifactTarget(Target):
 
         Deb.create(
             self.buildFile.project_root,
-            self.name,
+            self.artifact_name,
             self.target_directory,
             self.srcs,
             self.fpm_options,
@@ -81,10 +83,11 @@ class ArtifactTarget(Target):
         logging.info("Bundling complete")
 
     @classmethod
-    def create(cls, name, files, artifact_type, target_directory, fpm_options,
-               exclude_files=None, **kwargs):
+    def create(cls, name, files, artifact_name, artifact_type,
+               target_directory, fpm_options, exclude_files=None, **kwargs):
         target = ArtifactTarget(name, **kwargs)
         # pylint: disable=W0201
+        target.artifact_name = artifact_name
         target.target_directory = target_directory
         target.artifact_type = artifact_type
         target.fpm_options = fpm_options
@@ -117,6 +120,10 @@ def artifact_target(name, **kwargs):
         raise BuildConfigError(
             "artifact of artifact_target %s must be a "
             "dictionary" % name
+        )
+    if 'name' not in artifact:
+        raise BuildConfigError(
+            "artifact_target %s must contain a 'name' key" % name
         )
 
     if 'type' not in artifact:
@@ -155,6 +162,7 @@ def artifact_target(name, **kwargs):
     return ArtifactTarget.create(
         name,
         files,
+        artifact_name=artifact['name'],
         artifact_type=artifact['type'],
         target_directory=artifact['target_directory'],
         fpm_options=artifact['fpm_options'],

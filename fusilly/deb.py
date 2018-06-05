@@ -53,7 +53,9 @@ class Deb(object):
             srcs = deb.create_mapping(project_root, target_directory, files)
             deb.write_mapping(f, srcs)
 
-            cmd = 'fpm -t deb {user_options} -n {package_name} -s dir ' \
+            cmd = 'fpm --output-type deb {user_options} ' \
+                  '--name {package_name} ' \
+                  '--input-type dir ' \
                   '--inputs {src_input}'.format(
                     user_options=deb.options_str,
                     package_name=package_name,
